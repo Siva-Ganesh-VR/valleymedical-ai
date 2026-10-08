@@ -1,0 +1,125 @@
+# Valley Medical AI Platform: Proof of Concept
+
+Working POC of the two feasibility core proofs:
+
+1. **Meditab IMS integration** (AI-02, AI-03): find a patient, see their full record with a source on every item, generate a cited pre-visit summary, and view chronic-pain trends.
+2. **Controlled billing agent** (parts of AI-16, AI-17, AI-18): the 8-step denial and follow-up workflow, with human review of every classification, human approval of every draft, and no ability to send anything externally.
+
+> **Synthetic data only.** Meditab and the billing system are simulated behind adapter interfaces, because their real interfaces are not yet known. Do not load real patient data into this POC.
+
+## Quick start
+
+### Docker
+
+```bash
+cp .env.example .env          # optional: add ANTHROPIC_API_KEY to use Claude
+docker compose up --build
+```
+
+Open http://localhost:8080. The API is at http://localhost:8000/docs.
+
+### Local development
+
+Needs Python 3.11+ and Node 20+.
+
+```bash
+cp .env.example backend/.env
+make install
+make api      # terminal 1: FastAPI on :8000
+make ui       # terminal 2: React on :5173 (proxies /api to :8000)
+make test     # 54 backend tests
+```
+
+Without `ANTHROPIC_API_KEY`, the backend uses a deterministic **offline mock model**, so the demo works with no network. The mock shows the workflow; it says nothing about real model accuracy.
+
+## Demo script (about 10 minutes)
+
+Use the **Signed in as** menu (bottom left) to switch roles. In this POC that menu stands in for real sign-in.
+
+**Proof 1: Meditab records** (sign in as *Dr. Test, provider*)
+
+1. **Patients.** Note that two patients share the same name and date of birth. This is why matching uses identifiers, never names.
+2. **Testpatient, Avery → Pre-visit summary → Write pre-visit summary.** Each statement has a citation chip; click one to see the exact Meditab record, encounter, date and page. Medications and allergies are also listed straight from structured data.
+3. **Chronic pain tab.** Shows pain, function, sleep and mood trends, plus pain before and after each procedure. No AI is used on this tab.
+4. **Democase, Riley.** Labs show as *unavailable* (a simulated Meditab outage), not as empty. An outside MRI whose printed MRN belongs to someone else is **withheld** and sent to the exception queue.
+
+**Proof 2: Billing agent**
+
+5. Sign in as *Biller Test*. Open **Billing work → Read work queue**. The agent opens cases and proposes categories. Every case stops at **Needs classification review**.
+6. **CLM-9001** (medical necessity). Confirm the classification. The agent retrieves only the records this category needs, finds no gaps, and drafts an appeal citing them.
+7. Sign in as *Approver Test*. Approve the draft, optionally editing it first. The case is routed to the Appeals specialist. **Nothing is sent.** Staff record their own submission reference in step 8.
+8. Look at these other cases:
+   - **CLM-9002.** Imaging is missing, so the agent drafts a *provider query* instead of an appeal.
+   - **CLM-9003.** Timely filing is a hard stop; the agent will not draft and escalates instead.
+   - **CLM-9004.** The payer remark contains "IGNORE PREVIOUS INSTRUCTIONS…". This is flagged and treated as data.
+   - **CLM-9005.** The date of birth on the claim doesn't match Meditab. The agent stops before reading any records.
+   - **CLM-9008.** The rule result overrides the model's suggestion.
+9. **Exceptions** shows everything that stopped for a person.
+10. Sign in as *Admin Test* and open **Audit log**. Every read, model call and approval is listed, with an intact hash chain.
+
+## How this maps to the feasibility requirements
+
+| Client requirement (feasibility document) | Where it is implemented |
+| --- | --- |
+| Retrieve structured data, notes, PDFs; link every item to patient, encounter, date, source | `services/clinical_record.py` (`RecordItem.source`), document pages cited individually |
+| Zero wrong-patient disclosure | `services/patient_matching.py` (deterministic, fail-closed), document quarantine, cross-patient guard |
+| Citations for material clinical statements; no fabrication | `services/summary.py`, `services/grounding.py` (unsupported statements removed and shown) |
+| Chronic pain: pain, function, sleep, mood, meds, procedures, imaging, treatment response | `services/chronic_pain.py` |
+| Safe handling of failed or incomplete retrievals | Sections marked `unavailable`; summary lists data gaps |
+| Read-only; write-back not performed | Adapters expose read methods only |
+| Billing steps 1–8 with controls | `agents/billing_agent.py` (state machine) |
+| Hard rules override the model; stop and escalate conditions | `services/billing_rules.py` (`CARC_RULES`, `HARD_STOPS`) |
+| Human review of classification; no submission without approval | Human gates in the state machine; approve permission limited to `billing_approver`; no send capability exists |
+| Exception queue; retries capped; no duplicate actions | `services/exceptions.py`, LLM retry cap, `ActionRecord` idempotency ledger, optimistic locking |
+| Version control for prompts and models | `llm/prompts.py` versions, logged with every model call |
+| Complete audit trail; end-to-end case replay | `audit.py` (hash-chained), per-case event log |
+| Role-based access, minimum necessary | `security.py` permissions; billing agent reads records scoped per requirement |
+
+## Project layout
+
+```
+backend/
+  app/
+    adapters/meditab/   base.py (interface)  mock.py (synthetic Meditab)
+    adapters/billing/   base.py (interface)  mock.py (synthetic billing queue)
+    agents/billing_agent.py   8-step state machine
+    services/           patient matching, record assembly, summary, chronic pain,
+                        grounding checks, billing rules, exception queue
+    llm/                Claude client (forced tool use), offline mock, versioned prompts
+    api/                FastAPI routes
+    audit.py            hash-chained audit log
+    security.py         roles and permissions
+  fixtures/             synthetic Meditab patients and billing claims
+  tests/                54 tests
+frontend/               React + TypeScript (Vite)
+```
+
+## Using Claude
+
+Set `ANTHROPIC_API_KEY` and, optionally, `VM_ANTHROPIC_MODEL` (default `claude-sonnet-5-5`; confirm the current model name in Anthropic's docs). All calls use forced tool use, so output is structured JSON; retries are capped (`VM_LLM_MAX_RETRIES`). With the POC's synthetic data, no PHI is sent. Any use with real patient data requires a BAA with the model provider and approved retention terms first.
+
+## What is simulated, and assumptions
+
+| Area | POC | Needed for production |
+| --- | --- | --- |
+| Meditab interface | Mock adapter over JSON | Discovery: API, FHIR, HL7, DB replica or export. Then write one class implementing `MeditabAdapter`. |
+| Billing queue | Mock adapter over JSON | Discovery: Meditab billing module, separate PM system, clearinghouse or RCM vendor |
+| Sign-in | Demo headers and a role menu | SSO or OIDC with server-side roles |
+| Billing rules | Illustrative CARC mappings, required evidence and routing | Rules approved by Valley Medical |
+| Database | SQLite | Postgres, encrypted, with backups and retention |
+| Grounding checks | Small drug lexicon | Maintained terminology (e.g. RxNorm) and clinician-reviewed evaluation set |
+
+## Next enhancements (suggested order)
+
+1. Real Meditab adapter once discovery confirms the interface. Add incremental sync and a freshness timestamp per section.
+2. OCR pipeline for scanned PDFs, with page-level citations, and measured OCR quality.
+3. AI-23 documentation audit: a rule engine over Valley Medical's approved rules.
+4. Evaluation harness: a labelled test set, scoring for the acceptance thresholds, and regression runs on every prompt or model change.
+5. Real sign-in (OIDC), Postgres, background jobs for model calls, and monitoring.
+6. Handling-time measurement to support the 30% productivity target.
+
+## Known limitations
+
+- The mock model always produces well-formed output. Test with Claude before judging quality.
+- Model calls run inside the request. Production should move them to a job queue.
+- The audit chain uses a single writer. It is fine for the POC but needs serialised writes or a ledger service at scale.
