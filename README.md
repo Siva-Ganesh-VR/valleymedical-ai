@@ -12,7 +12,7 @@ Working POC of the two feasibility core proofs:
 ### Docker
 
 ```bash
-cp .env.example .env          # optional: add ANTHROPIC_API_KEY to use Claude
+cp .env.example .env          # optional: add GEMINI_API_KEY (free key) or ANTHROPIC_API_KEY
 docker compose up --build
 ```
 
@@ -27,10 +27,10 @@ cp .env.example backend/.env
 make install
 make api      # terminal 1: FastAPI on :8000
 make ui       # terminal 2: React on :5173 (proxies /api to :8000)
-make test     # 54 backend tests
+make test     # backend tests
 ```
 
-Without `ANTHROPIC_API_KEY`, the backend uses a deterministic **offline mock model**, so the demo works with no network. The mock shows the workflow; it says nothing about real model accuracy.
+Without a key for the chosen provider (default `gemini`), the backend uses a deterministic **offline mock model**, so the demo works with no network. The mock shows the workflow; it says nothing about real model accuracy.
 
 ## Demo script (about 10 minutes)
 
@@ -85,18 +85,30 @@ backend/
     agents/billing_agent.py   8-step state machine
     services/           patient matching, record assembly, summary, chronic pain,
                         grounding checks, billing rules, exception queue
-    llm/                Claude client (forced tool use), offline mock, versioned prompts
+    llm/                Gemini and Claude clients (forced tool use), offline mock, versioned prompts
     api/                FastAPI routes
     audit.py            hash-chained audit log
     security.py         roles and permissions
   fixtures/             synthetic Meditab patients and billing claims
-  tests/                54 tests
+  tests/
 frontend/               React + TypeScript (Vite)
 ```
 
-## Using Claude
+## Choosing the AI model
 
-Set `ANTHROPIC_API_KEY` and, optionally, `VM_ANTHROPIC_MODEL` (default `claude-sonnet-5-5`; confirm the current model name in Anthropic's docs). All calls use forced tool use, so output is structured JSON; retries are capped (`VM_LLM_MAX_RETRIES`). With the POC's synthetic data, no PHI is sent. Any use with real patient data requires a BAA with the model provider and approved retention terms first.
+Set `VM_LLM_PROVIDER` to `gemini` (default), `anthropic` or `mock`.
+
+| Provider | Key | Model setting (default) |
+| --- | --- | --- |
+| `gemini` | `GEMINI_API_KEY` (free key from Google AI Studio) | `VM_GEMINI_MODEL` (`gemini-3.5-flash-lite`; free-tier models change, so check Google's model list) |
+| `anthropic` | `ANTHROPIC_API_KEY` | `VM_ANTHROPIC_MODEL` (`claude-sonnet-5-5`) |
+| `mock` | none | offline, deterministic |
+
+If `VM_LLM_PROVIDER` is not set and `GEMINI_API_KEY` is missing, the mock is used and a warning is logged. If you set the provider explicitly, its key is required. `/health` shows which client is active.
+
+All calls use forced tool use / function calling, so output is structured JSON; retries are capped (`VM_LLM_MAX_RETRIES`). Gemini "thinking" tokens count toward its output limit, so it uses `VM_GEMINI_MAX_TOKENS` (default 8192). A blocked or truncated Gemini answer is reported as a model failure, not used.
+
+**Data:** with the POC's synthetic data, no PHI is sent. Free-tier Gemini prompts may be used by Google to improve its products, so never use real patient data. Any real use needs a paid plan or BAA with the model provider and approved retention terms first.
 
 ## What is simulated, and assumptions
 
@@ -120,6 +132,6 @@ Set `ANTHROPIC_API_KEY` and, optionally, `VM_ANTHROPIC_MODEL` (default `claude-s
 
 ## Known limitations
 
-- The mock model always produces well-formed output. Test with Claude before judging quality.
+- The mock model always produces well-formed output. Test with a real model (Gemini or Claude) before judging quality.
 - Model calls run inside the request. Production should move them to a job queue.
 - The audit chain uses a single writer. It is fine for the POC but needs serialised writes or a ledger service at scale.

@@ -18,10 +18,16 @@ class Settings(BaseSettings):
 
     database_url: str = f"sqlite:///{BASE_DIR / 'data' / 'poc.db'}"
 
-    # LLM: "auto" uses Anthropic when ANTHROPIC_API_KEY is set, otherwise the offline mock.
-    llm_provider: str = "auto"  # auto | anthropic | mock
+    # LLM provider switch: gemini (default) | anthropic | mock.
+    # If left unset and GEMINI_API_KEY is missing, the offline mock is used. If set explicitly, the key is required.
+    llm_provider: str = "gemini"
     anthropic_api_key: str | None = Field(default=None, validation_alias="ANTHROPIC_API_KEY")
     anthropic_model: str = "claude-sonnet-5-5"
+    gemini_api_key: str | None = Field(default=None, validation_alias="GEMINI_API_KEY")
+    gemini_model: str = "gemini-3.5-flash-lite"
+    # Gemini "thinking" tokens count against the output limit, so this is larger than llm_max_tokens.
+    gemini_max_tokens: int = 8192
+    gemini_temperature: float | None = None  # None = model default
     llm_max_retries: int = 3
     llm_timeout_seconds: float = 60.0
     llm_max_tokens: int = 2048
