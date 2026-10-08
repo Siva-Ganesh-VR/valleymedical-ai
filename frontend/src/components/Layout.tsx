@@ -10,6 +10,8 @@ const NAV = [
   { to: "/audit", label: "Audit log", hint: "Who saw what" },
 ];
 
+const LLM_LABELS: Record<string, string> = { mock: "offline mock", gemini: "Gemini API", anthropic: "Claude API" };
+
 export default function Layout({ children }: { children: ReactNode }) {
   const { user, switchUser } = useSession();
   const [llm, setLlm] = useState<string | null>(null);
@@ -44,7 +46,7 @@ export default function Layout({ children }: { children: ReactNode }) {
           </select>
           <p className="fine">
             Synthetic data only. Meditab and billing are simulated.
-            {llm && <> Model: {llm === "mock" ? "offline mock" : "Claude API"}.</>}
+            {llm && <> Model: {LLM_LABELS[llm] ?? llm}.</>}
           </p>
         </div>
       </aside>
