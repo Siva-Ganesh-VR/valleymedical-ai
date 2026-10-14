@@ -10,6 +10,7 @@ from fastapi.responses import JSONResponse
 from app.api import admin, billing, features, patients
 from app.container import Container, build_container
 from app.errors import DomainError
+from app.hosting import configure_hosting
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
 
@@ -36,5 +37,7 @@ def create_app(container: Container | None = None) -> FastAPI:
     app.include_router(patients.router)
     app.include_router(billing.router)
     app.include_router(features.router)
+    # Must come after the API routes: the UI mount catches every other path.
+    configure_hosting(app, static_dir=container.settings.static_dir, demo_password=container.settings.demo_password)
     return app
 

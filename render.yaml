@@ -1,0 +1,26 @@
+# Render Blueprint: one free web service running the whole POC.
+# Render dashboard -> New -> Blueprint -> pick this repository.
+# You will be asked for the values marked `sync: false`; they are never stored in the repo.
+services:
+  - type: web
+    name: valley-medical-poc
+    runtime: docker
+    plan: free
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /api/health
+    autoDeploy: true
+    envVars:
+      - key: VM_DEMO_PASSWORD        # everyone who opens the URL must enter this
+        sync: false
+      - key: GEMINI_API_KEY          # leave empty to run on the offline mock model
+        sync: false
+      - key: VM_LLM_PROVIDER
+        value: gemini
+      - key: VM_GEMINI_MODEL
+        value: gemini-3.5-flash-lite
+      - key: VM_LLM_REQUESTS_PER_MINUTE
+        value: "10"
+      - key: VM_LLM_MONTHLY_TOKEN_BUDGET
+        value: "2000000"
+      - key: VM_AS_OF_DATE
+        value: "2026-09-01"

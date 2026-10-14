@@ -63,4 +63,11 @@ class Settings(BaseSettings):
 
     acceptance_testset: Path = FIXTURES_DIR / "acceptance_testset.json"
 
+    # Hosting (single-service deployments such as Render's free tier)
+    # Folder with the built React app. When set, the API also serves the UI from the same URL.
+    static_dir: Path | None = None
+    # When set, every page and API call needs this password (browser sign-in prompt, any username).
+    # Strongly recommended on any public URL: otherwise anyone can use the app and your AI quota.
+    demo_password: str | None = None
+
     cors_origins: list[str] = ["http://localhost:5173", "http://localhost:8080"]

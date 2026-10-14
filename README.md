@@ -158,6 +158,25 @@ All calls use forced tool use / function calling, so output is structured JSON; 
 5. Real sign-in (OIDC), Postgres, background jobs for model calls, and monitoring.
 6. Sensitive-data segmentation for 42 CFR Part 2 and psychotherapy notes (WBS N2).
 
+## Host it free (Render)
+
+The root `Dockerfile` builds one image in which the backend also serves the UI, so the whole POC runs as **one free Render web service** (no credit card). `render.yaml` configures it.
+
+1. Push this repository to GitHub (a **private** repository is fine). Check that `.env` is **not** committed: `git ls-files | grep .env` should list only `.env.example`.
+2. In Render: **New → Blueprint**, connect GitHub, and pick the repository.
+3. When asked, enter:
+   - `VM_DEMO_PASSWORD`: a password you'll share with the client. The browser asks for it; any username works.
+   - `GEMINI_API_KEY`: your key, or leave it empty to run on the offline mock model.
+4. Wait for the build (about 5 minutes), then open the `…onrender.com` URL.
+
+What to expect on the free tier:
+- **It sleeps after 15 minutes without visitors.** The next visit takes about a minute to wake it. Open the URL a few minutes before a demo.
+- **Data resets when it restarts or redeploys**, because the free disk is temporary. Each demo starts clean: *Read work queue*, then *Load demo workload*.
+- **Small CPU.** Pages are fine; batch AI work is limited by the model's rate limit anyway.
+- **Synthetic data only.** Free hosting has no BAA. Never load real patient data here.
+
+To run the same image locally: `docker build -t vm-poc . && docker run -p 8000:8000 -e VM_DEMO_PASSWORD=test vm-poc`, then open http://localhost:8000.
+
 ## Rate limits (429 Too Many Requests)
 
 Reading a 27-claim queue makes one model call per claim, and loading the demo workload adds about 12 more. Free and low-tier API keys allow only a few requests per minute, so the app:
