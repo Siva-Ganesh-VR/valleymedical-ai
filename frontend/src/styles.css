@@ -164,6 +164,9 @@ label { display: inline-flex; flex-direction: column; gap: 0.25rem; font-size: 0
 .step-waiting_human small { color: var(--human); font-weight: 500; }
 .step-blocked .step-n { background: var(--critical-bg); border-color: var(--critical); color: var(--critical); }
 .step-skipped, .step-pending { opacity: 0.7; }
+.step-not_reached { opacity: 0.5; }
+.step-not_reached .step-label { text-decoration: line-through; text-decoration-color: var(--rule); }
+.step-blocked small { color: var(--critical); font-weight: 500; }
 .case-main { display: flex; flex-direction: column; gap: 1rem; }
 .panel { background: var(--surface); border: 1px solid var(--rule); border-radius: var(--radius-m); padding: 1.1rem 1.25rem; }
 details.panel > summary { cursor: pointer; font-weight: 600; }

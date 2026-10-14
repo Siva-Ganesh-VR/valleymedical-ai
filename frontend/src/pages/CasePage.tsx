@@ -7,7 +7,8 @@ import { CATEGORY_LABELS, DRAFT_LABELS, FLAG_LABELS, money, sourcePath, STATE_LA
 import { useSession } from "../session";
 
 const STEP_TEXT: Record<string, string> = {
-  done: "Done", current: "In progress", waiting_human: "Waiting for a person", blocked: "Stopped", pending: "Not started", skipped: "Not needed",
+  done: "Done", current: "In progress", waiting_human: "Waiting for a person", blocked: "Stopped here",
+  pending: "Not started", skipped: "Not needed", not_reached: "Not reached",
 };
 
 export default function CasePage() {
@@ -234,10 +235,15 @@ function Tracking({ c, onChange }: { c: CaseDetail; onChange: (c: CaseDetail) =>
       )}
       {(c.state === "SUBMITTED_BY_STAFF" || c.state === "ESCALATED" || c.state === "ROUTED") && (
         <div className="decide">
-          <label>Resolution note<input value={note} onChange={(e) => setNote(e.target.value)} /></label>
-          <button disabled={action.busy} onClick={() => action.run(async () => onChange(await api.tracking(c.id, { status: "resolved", note: note || undefined })))}>
+          <label>
+            Resolution note {c.state === "ESCALATED" ? "(required)" : "(optional)"}
+            <input value={note} onChange={(e) => setNote(e.target.value)} placeholder={c.state === "ESCALATED" ? "What was done to resolve it?" : ""} />
+          </label>
+          <button disabled={action.busy || (c.state === "ESCALATED" && note.trim().length < 3)}
+                  onClick={() => action.run(async () => onChange(await api.tracking(c.id, { status: "resolved", note: note || undefined })))}>
             Mark resolved
           </button>
+          <p className="fine">Resolving the case also closes its open exceptions.</p>
         </div>
       )}
       <ActionError message={action.error} />

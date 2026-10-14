@@ -180,7 +180,7 @@ export interface CaseDetail extends CaseSummary {
     authorization_number: string | null;
     denial: { carc_code: string | null; description: string | null; denial_date: string | null; payer_remark: string | null } | null;
   };
-  steps: { step: number; label: string; status: "done" | "current" | "waiting_human" | "blocked" | "pending" | "skipped" }[];
+  steps: { step: number; label: string; status: "done" | "current" | "waiting_human" | "blocked" | "pending" | "skipped" | "not_reached" }[];
   classification: {
     rule_category: string | null;
     model_category: string | null;
