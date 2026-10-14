@@ -129,3 +129,117 @@ class ActionRecord(Base):
     action: Mapped[str] = mapped_column(String(60))
     ts: Mapped[str] = mapped_column(String(40))
     result: Mapped[dict] = mapped_column(JSON, default=dict)
+
+
+# ---------------------------------------------------------------------------------------------
+# Added for the feature pack (WBS #10, #14, #18, N3, N9, N10). New tables only, so an existing
+# poc.db keeps working: SQLAlchemy creates these on start-up without touching older tables.
+
+
+class LLMCall(Base):
+    """One row per model call through the AI gateway (WBS N3/N10)."""
+
+    __tablename__ = "llm_calls"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    ts: Mapped[str] = mapped_column(String(40), index=True)
+    task: Mapped[str] = mapped_column(String(60), index=True)
+    provider: Mapped[str] = mapped_column(String(30))
+    model: Mapped[str | None] = mapped_column(String(80), nullable=True)
+    prompt_version: Mapped[str | None] = mapped_column(String(80), nullable=True)
+    status: Mapped[str] = mapped_column(String(20))  # ok | error | blocked | reused
+    input_tokens: Mapped[int] = mapped_column(Integer, default=0)
+    output_tokens: Mapped[int] = mapped_column(Integer, default=0)
+    latency_ms: Mapped[int] = mapped_column(Integer, default=0)
+    attempts: Mapped[int] = mapped_column(Integer, default=0)
+    est_cost_usd: Mapped[float | None] = mapped_column(Float, nullable=True)
+    note: Mapped[str | None] = mapped_column(Text, nullable=True)
+
+
+class ControlFlag(Base):
+    """Small key/value store for admin switches (e.g. the AI kill switch)."""
+
+    __tablename__ = "control_flags"
+
+    key: Mapped[str] = mapped_column(String(60), primary_key=True)
+    value: Mapped[dict] = mapped_column(JSON, default=dict)
+    updated_by: Mapped[str] = mapped_column(String(120))
+    updated_at: Mapped[str] = mapped_column(String(40))
+
+
+class SummaryCache(Base):
+    """Re-use a pre-visit summary when nothing in the chart has changed (WBS N9)."""
+
+    __tablename__ = "summary_cache"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    patient_id: Mapped[str] = mapped_column(String(60), index=True)
+    fingerprint: Mapped[str] = mapped_column(String(64), index=True)
+    created_at: Mapped[str] = mapped_column(String(40))
+    result: Mapped[dict] = mapped_column(JSON)
+    tokens: Mapped[int] = mapped_column(Integer, default=0)
+
+
+class DocAuditRun(Base):
+    """One documentation-audit run for one patient (AI-23, WBS #10)."""
+
+    __tablename__ = "doc_audit_runs"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    patient_id: Mapped[str] = mapped_column(String(60), index=True)
+    created_at: Mapped[str] = mapped_column(String(40))
+    actor: Mapped[str] = mapped_column(String(120))
+    ruleset_version: Mapped[str] = mapped_column(String(60))
+    checks_total: Mapped[int] = mapped_column(Integer)
+    checks_passed: Mapped[int] = mapped_column(Integer)
+    model: Mapped[str | None] = mapped_column(String(80), nullable=True)
+    prompt_version: Mapped[str | None] = mapped_column(String(80), nullable=True)
+    detail: Mapped[dict] = mapped_column(JSON, default=dict)
+
+
+class DocAuditFinding(Base):
+    __tablename__ = "doc_audit_findings"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    run_id: Mapped[int] = mapped_column(Integer, index=True)
+    patient_id: Mapped[str] = mapped_column(String(60), index=True)
+    rule_id: Mapped[str] = mapped_column(String(20))
+    target: Mapped[str] = mapped_column(String(120))  # encounter/procedure id, or "patient"
+    severity: Mapped[str] = mapped_column(String(20))
+    method: Mapped[str] = mapped_column(String(10))  # rule | ai
+    message: Mapped[str] = mapped_column(Text)
+    evidence: Mapped[list] = mapped_column(JSON, default=list)
+    status: Mapped[str] = mapped_column(String(20), default="open")  # open | confirmed | dismissed
+    reviewed_by: Mapped[str | None] = mapped_column(String(120), nullable=True)
+    review_note: Mapped[str | None] = mapped_column(Text, nullable=True)
+    reviewed_at: Mapped[str | None] = mapped_column(String(40), nullable=True)
+
+
+class BaselineMeasure(Base):
+    """Handling-time baseline from the pre-agent time study (D1 Months 1-2)."""
+
+    __tablename__ = "baseline_measures"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    category: Mapped[str] = mapped_column(String(40), index=True)
+    minutes_per_case: Mapped[float] = mapped_column(Float)
+    sample_size: Mapped[int] = mapped_column(Integer)
+    source: Mapped[str] = mapped_column(Text)
+    synthetic: Mapped[bool] = mapped_column(default=False)
+    created_by: Mapped[str] = mapped_column(String(120))
+    created_at: Mapped[str] = mapped_column(String(40))
+
+
+class AcceptanceRun(Base):
+    """Result of one automated acceptance pre-check (WBS #18)."""
+
+    __tablename__ = "acceptance_runs"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    created_at: Mapped[str] = mapped_column(String(40))
+    actor: Mapped[str] = mapped_column(String(120))
+    model: Mapped[str] = mapped_column(String(80))
+    testset_version: Mapped[str] = mapped_column(String(60))
+    hard_gates_passed: Mapped[bool] = mapped_column()
+    summary: Mapped[dict] = mapped_column(JSON, default=dict)
+    results: Mapped[list] = mapped_column(JSON, default=list)

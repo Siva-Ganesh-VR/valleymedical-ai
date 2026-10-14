@@ -55,6 +55,15 @@ class ExceptionService:
             stmt = stmt.where(ExceptionItem.status == status)
         return list(self._session.scalars(stmt))
 
+    def resolve_for(self, entity_type: str, entity_id: str, actor: Actor, note: str) -> int:
+        """Close every open exception about one entity (e.g. when its billing case is resolved)."""
+        items = list(self._session.scalars(select(ExceptionItem).where(
+            ExceptionItem.entity_type == entity_type, ExceptionItem.entity_id == entity_id,
+            ExceptionItem.status == "open")))
+        for item in items:
+            self.resolve(item.id, actor, note)
+        return len(items)
+
     def resolve(self, exception_id: int, actor: Actor, note: str) -> ExceptionItem:
         item = self._session.get(ExceptionItem, exception_id)
         if item is None:

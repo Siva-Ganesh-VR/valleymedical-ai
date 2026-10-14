@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { ApiError } from "./api";
 import { useSession } from "./session";
 
@@ -47,4 +47,23 @@ export function useAction() {
     }
   }, []);
   return { busy, error, run, clearError: () => setError(null) };
+}
+
+/** Seconds a person actively spent on a screen: counts only while the tab is visible and focused.
+ *  Used for the D1 handling-time measurement. Call take() when a decision is submitted. */
+export function useActiveTimer(active: boolean) {
+  const seconds = useRef(0);
+  useEffect(() => {
+    if (!active) return;
+    const tick = window.setInterval(() => {
+      if (document.visibilityState === "visible" && document.hasFocus()) seconds.current += 1;
+    }, 1000);
+    return () => window.clearInterval(tick);
+  }, [active]);
+  const take = useCallback(() => {
+    const value = seconds.current;
+    seconds.current = 0;
+    return value;
+  }, []);
+  return { take };
 }

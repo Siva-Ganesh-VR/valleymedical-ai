@@ -20,18 +20,22 @@ class ClassificationReview(BaseModel):
     decision: Literal["confirm", "change"]
     category: str | None = None
     note: str | None = Field(default=None, max_length=2000)
+    handling_seconds: int | None = Field(default=None, ge=0, le=86400)
 
 
 class DraftReview(BaseModel):
     decision: Literal["approve", "reject"]
     edited_text: str | None = Field(default=None, max_length=20000)
     note: str | None = Field(default=None, max_length=2000)
+    handling_seconds: int | None = Field(default=None, ge=0, le=86400)
+    edit_level: Literal["none", "minor", "major"] | None = None
 
 
 class TrackingUpdate(BaseModel):
     status: Literal["submitted_by_staff", "resolved"]
     reference: str | None = Field(default=None, max_length=200)
     note: str | None = Field(default=None, max_length=2000)
+    handling_seconds: int | None = Field(default=None, ge=0, le=86400)
 
 
 def _summary(case: BillingCase, agent: BillingAgent) -> dict:
@@ -115,7 +119,8 @@ def review_classification(case_id: str, body: ClassificationReview,
                           actor: Actor = Depends(require(Permission.BILLING_CLASSIFY_REVIEW)),
                           container: Container = Depends(get_container), session: Session = Depends(get_session)):
     agent = container.billing_agent(session)
-    case = agent.review_classification(case_id, actor, decision=body.decision, category=body.category, note=body.note)
+    case = agent.review_classification(case_id, actor, decision=body.decision, category=body.category, note=body.note,
+                                       handling_seconds=body.handling_seconds)
     session.commit()
     return _detail(case, agent)
 
@@ -124,7 +129,8 @@ def review_classification(case_id: str, body: ClassificationReview,
 def review_draft(case_id: str, body: DraftReview, actor: Actor = Depends(require(Permission.BILLING_APPROVE)),
                  container: Container = Depends(get_container), session: Session = Depends(get_session)):
     agent = container.billing_agent(session)
-    case = agent.review_draft(case_id, actor, decision=body.decision, edited_text=body.edited_text, note=body.note)
+    case = agent.review_draft(case_id, actor, decision=body.decision, edited_text=body.edited_text, note=body.note,
+                              handling_seconds=body.handling_seconds, edit_level=body.edit_level)
     session.commit()
     return _detail(case, agent)
 
@@ -133,6 +139,7 @@ def review_draft(case_id: str, body: DraftReview, actor: Actor = Depends(require
 def tracking(case_id: str, body: TrackingUpdate, actor: Actor = Depends(require(Permission.BILLING_WORK)),
              container: Container = Depends(get_container), session: Session = Depends(get_session)):
     agent = container.billing_agent(session)
-    case = agent.update_tracking(case_id, actor, status=body.status, reference=body.reference, note=body.note)
+    case = agent.update_tracking(case_id, actor, status=body.status, reference=body.reference, note=body.note,
+                                 handling_seconds=body.handling_seconds)
     session.commit()
     return _detail(case, agent)

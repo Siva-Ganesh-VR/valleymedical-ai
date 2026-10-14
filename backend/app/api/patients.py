@@ -51,10 +51,11 @@ def chronic_pain(
 @router.post("/{patient_id}/previsit-summary")
 def previsit_summary(
     patient_id: str,
+    force: bool = Query(default=False, description="Ignore a cached summary and call the model again"),
     actor: Actor = Depends(require(Permission.CLINICAL_READ)),
     container: Container = Depends(get_container),
     session: Session = Depends(get_session),
 ):
-    result = container.summaries(session).generate(patient_id, actor)
+    result = container.summaries(session).generate(patient_id, actor, force=force)
     session.commit()
     return result.model_dump(mode="json")

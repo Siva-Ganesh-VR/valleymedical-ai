@@ -140,3 +140,49 @@ def draft_user(draft_type: str, claim: dict, evidence: list[dict], gaps: list[di
         f"<evidence>\n{json.dumps(evidence, indent=1, default=str)}\n</evidence>\n\n"
         f"Missing items found by the system:\n{json.dumps(gaps, indent=1)}"
     )
+
+
+# ---------------------------------------------------------------- documentation audit (AI-23)
+DOC_AUDIT_PROMPT_VERSION = "doc_audit_notes/1.0.0"
+
+DOC_AUDIT_SYSTEM = f"""You check clinical visit notes against documentation rules for a US outpatient practice.
+
+For each requested (rule, note) pair, decide whether the note meets the rule.
+
+Rules:
+- Judge only from the note text provided. Do not assume anything that is not written.
+- If the rule is met, copy the exact words from the note that show it into evidence_quote. Copy them character for character; do not paraphrase.
+- If the rule is not met, set met to false and leave evidence_quote empty.
+- Do not give clinical advice or suggest what the note should say.
+- {UNTRUSTED_DATA_RULE}
+"""
+
+DOC_AUDIT_TOOL = "submit_note_checks"
+DOC_AUDIT_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "checks": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "rule_id": {"type": "string"},
+                    "encounter_id": {"type": "string"},
+                    "met": {"type": "boolean"},
+                    "evidence_quote": {"type": "string"},
+                    "explanation": {"type": "string"},
+                },
+                "required": ["rule_id", "encounter_id", "met", "evidence_quote", "explanation"],
+            },
+        }
+    },
+    "required": ["checks"],
+}
+
+
+def doc_audit_user(rules: list[dict], notes: list[dict], pairs: list[dict]) -> str:
+    return (
+        f"Documentation rules:\n{json.dumps(rules, indent=1)}\n\n"
+        f"Check exactly these (rule, note) pairs:\n{json.dumps(pairs, indent=1)}\n\n"
+        f"<evidence>\n{json.dumps(notes, indent=1, default=str)}\n</evidence>"
+    )

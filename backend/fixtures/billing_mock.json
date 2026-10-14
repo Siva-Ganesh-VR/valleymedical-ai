@@ -30,6 +30,10 @@
     {"claim_id": "CLM-9008", "queue": "denials-team-a", "patient_mrn": "SYN100004", "patient_last_name": "Democase", "patient_first_name": "Riley", "patient_dob": "1959-01-22",
      "payer": "Synthetic Health Plan", "date_of_service": "2026-06-05", "encounter_id": "ENC-4001", "cpt_codes": ["99214"], "icd10_codes": [], "billed_amount": 210.00,
      "status": "rejected", "submitted_on": "2026-06-08", "last_worked_on": "2026-06-09",
+     "denial": {"carc_code": "16", "description": "Claim lacks information needed for adjudication: no diagnosis code", "denial_date": "2026-06-09"}},
+     {"claim_id": "CLM-9090", "queue": "denials-team-a", "patient_mrn": "SYN100008", "patient_last_name": "Democase", "patient_first_name": "Riley", "patient_dob": "1959-01-22",
+     "payer": "Synthetic Health Plan", "date_of_service": "2026-06-05", "encounter_id": "ENC-4001", "cpt_codes": ["99214"], "icd10_codes": [], "billed_amount": 210.00,
+     "status": "rejected", "submitted_on": "2026-06-08", "last_worked_on": "2026-06-09",
      "denial": {"carc_code": "16", "description": "Claim lacks information needed for adjudication: no diagnosis code", "denial_date": "2026-06-09"}}
   ]
 }
