@@ -158,6 +158,17 @@ All calls use forced tool use / function calling, so output is structured JSON; 
 5. Real sign-in (OIDC), Postgres, background jobs for model calls, and monitoring.
 6. Sensitive-data segmentation for 42 CFR Part 2 and psychotherapy notes (WBS N2).
 
+## Rate limits (429 Too Many Requests)
+
+Reading a 27-claim queue makes one model call per claim, and loading the demo workload adds about 12 more. Free and low-tier API keys allow only a few requests per minute, so the app:
+
+- **Throttles** model calls to `VM_LLM_REQUESTS_PER_MINUTE` (default 10). Set it just under your key's limit, which is shown in the provider console. Batch actions take longer but don't fail.
+- **Waits as long as the provider asks** when it does return 429 (Gemini's `retryDelay`), up to `VM_LLM_MAX_RETRY_WAIT_SECONDS`.
+- **Fails safely** if a call still fails: the case goes to the exception queue, nothing is guessed.
+- **Recovers in one click**: *Billing work → Retry N with AI*, or *Retry with AI* on a case. Only model failures can be retried; hard stops and safety escalations still need a person.
+
+A daily quota cannot be throttled around. If it is used up, use a paid key or `VM_LLM_PROVIDER=mock` for the demo.
+
 ## Known limitations
 
 - The mock model always produces well-formed output. Test with a real model (Gemini or Claude) before judging quality.

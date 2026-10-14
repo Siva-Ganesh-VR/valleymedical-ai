@@ -46,6 +46,7 @@ def _summary(case: BillingCase, agent: BillingAgent) -> dict:
         "category_confirmed": case.confirmed_category is not None, "flags": case.flags, "owner": case.owner,
         "payer": item.payer, "date_of_service": str(item.date_of_service), "billed_amount": item.billed_amount,
         "denial_code": item.denial.carc_code if item.denial else None, "updated_at": case.updated_at,
+        "escalation_kind": agent.escalation_kind(case),
     }
 
 
@@ -112,6 +113,23 @@ def advance(case_id: str, actor: Actor = Depends(require(Permission.BILLING_WORK
     case = agent.advance(case_id)
     session.commit()
     return _detail(case, agent)
+
+
+@router.post("/cases/{case_id}/retry-ai")
+def retry_ai(case_id: str, actor: Actor = Depends(require(Permission.BILLING_WORK)),
+             container: Container = Depends(get_container), session: Session = Depends(get_session)):
+    agent = container.billing_agent(session)
+    case = agent.retry_ai(case_id, actor)
+    session.commit()
+    return _detail(case, agent)
+
+
+@router.post("/queues/{queue}/retry-ai")
+def retry_queue_ai(queue: str, actor: Actor = Depends(require(Permission.BILLING_WORK)),
+                   container: Container = Depends(get_container), session: Session = Depends(get_session)):
+    result = container.billing_agent(session).retry_failed_ai(queue, actor)
+    session.commit()
+    return result
 
 
 @router.post("/cases/{case_id}/classification-review")

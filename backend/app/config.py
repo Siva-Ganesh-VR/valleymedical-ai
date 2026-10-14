@@ -29,6 +29,16 @@ class Settings(BaseSettings):
     gemini_max_tokens: int = 8192
     gemini_temperature: float | None = None  # None = model default
     llm_max_retries: int = 3
+    # Requests per minute across the whole app, to stay under the provider's quota (429 errors).
+    # Check your key's limit in the provider console. 0 disables throttling. The mock is never throttled.
+    llm_requests_per_minute: int = 10
+    # Longest wait honoured when the provider asks us to retry later (seconds).
+    llm_max_retry_wait_seconds: float = 60.0
+    # Spaces model calls out to stay under the provider's per-minute quota (429 errors otherwise).
+    # Check your key's limit in the provider console. 0 disables throttling.
+    llm_requests_per_minute: int = 10
+    # Longest wait honoured when the provider says "retry after N seconds".
+    llm_max_retry_wait_seconds: float = 60.0
     llm_timeout_seconds: float = 60.0
     llm_max_tokens: int = 2048
 

@@ -58,6 +58,7 @@ class CaseState(str, Enum):
 
 
 TERMINAL = {CaseState.NO_ACTION, CaseState.COMPLETED}
+RETRYABLE_KINDS = {"llm_failure"}  # model outage, rate limit or AI paused: safe to try again
 HUMAN_GATES = {CaseState.AWAITING_CLASSIFICATION_REVIEW, CaseState.AWAITING_DRAFT_APPROVAL}
 
 STEPS = [
@@ -437,6 +438,45 @@ class BillingAgent:
             raise ValidationFailedError("status must be 'submitted_by_staff' or 'resolved'")
         return case
 
+    # ------------------------------------------------------------------ recovery after a model failure
+    def last_escalation(self, case_id: str) -> CaseEvent | None:
+        return self._s.scalars(select(CaseEvent).where(CaseEvent.case_id == case_id,
+                                                       CaseEvent.to_state == CaseState.ESCALATED.value)
+                               .order_by(CaseEvent.id.desc()).limit(1)).first()
+
+    def escalation_kind(self, case: BillingCase) -> str | None:
+        if case.state != CaseState.ESCALATED.value:
+            return None
+        last = self.last_escalation(case.id)
+        return (last.detail or {}).get("kind") if last else None
+
+    def retry_ai(self, case_id: str, actor: Actor) -> BillingCase:
+        """Put a case that stopped because the model failed (outage, rate limit, AI paused) back where
+        it was, close that exception, and let the agent try again. Hard stops and safety escalations
+        (patient match, unsafe draft) are not retryable: they need a person."""
+        case = self.get_case(case_id)
+        self._require(case, {CaseState.ESCALATED})
+        last = self.last_escalation(case.id)
+        if last is None or (last.detail or {}).get("kind") not in RETRYABLE_KINDS or not last.from_state:
+            raise InvalidStateError("Only cases stopped by a model failure can be retried. This one needs a person.")
+        back_to = CaseState(last.from_state)
+        case.escalation_reason = None
+        self._exceptions.resolve_for("billing_case", case.id, actor, "Retried with AI", kind="llm_failure")
+        self._transition(case, {CaseState.ESCALATED}, back_to, actor, "Retrying with AI after a model failure",
+                         {"recovered": True}, step=last.step)
+        return self.advance(case.id, BILLING_AGENT)
+
+    def retry_failed_ai(self, queue: str, actor: Actor) -> dict:
+        """Retry every case in the queue that stopped only because the model failed."""
+        retried, recovered, failed = [], [], []
+        for case in self.list_cases(queue):
+            if self.escalation_kind(case) not in RETRYABLE_KINDS:
+                continue
+            retried.append(case.claim_id)
+            self.retry_ai(case.id, actor)
+            (failed if case.state == CaseState.ESCALATED.value else recovered).append(case.claim_id)
+        return {"retried": retried, "recovered": recovered, "still_failing": failed}
+
     # ------------------------------------------------------------------ helpers
     def get_case(self, case_id: str) -> BillingCase:
         case = self._s.get(BillingCase, case_id)
@@ -549,7 +589,9 @@ def step_progress(case: BillingCase, events: list[CaseEvent]) -> list[dict]:
     where it stopped is "blocked" and later steps are "not_reached", even after a person closes it.
     """
     state = CaseState(case.state)
-    escalations = [e for e in events if e.to_state == CaseState.ESCALATED.value]
+    # An escalation that was later recovered (retried with AI) no longer marks the case as stopped.
+    last_recovery = max((i for i, e in enumerate(events) if (e.detail or {}).get("recovered")), default=-1)
+    escalations = [e for e in events[last_recovery + 1:] if e.to_state == CaseState.ESCALATED.value]
     stopped_at = escalations[-1].step if escalations else None
     done_steps = {e.step for e in events if e.to_state != CaseState.ESCALATED.value}
     if stopped_at is not None:

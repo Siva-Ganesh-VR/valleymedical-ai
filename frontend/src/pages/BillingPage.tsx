@@ -71,6 +71,15 @@ export default function BillingPage() {
   }, [all, view, search, category, sort, status]);
   const categories = useMemo(() => Array.from(new Set(all.map((c) => c.category).filter(Boolean))) as string[], [all]);
   const totalAtStake = shown.reduce((sum, c) => sum + c.billed_amount, 0);
+  const aiFailed = all.filter((c) => c.escalation_kind === "llm_failure");
+  const retry = useAction();
+  const retryAll = () => retry.run(async () => {
+    const r = await api.retryQueueAi(queue);
+    setSyncNote(r.still_failing.length
+      ? `Retried ${r.retried.length}: ${r.recovered.length} recovered, ${r.still_failing.length} still failing. The model may still be busy; try again in a minute.`
+      : `Retried ${r.retried.length} case${r.retried.length === 1 ? "" : "s"} with AI. All recovered.`);
+    await cases.reload();
+  });
 
   const pull = () =>
     sync.run(async () => {
@@ -106,9 +115,23 @@ export default function BillingPage() {
             {seed.busy ? "Loading…" : "Load demo workload"}
           </button>
         )}
-        {syncNote && <span className="fine">{syncNote}</span>}
+        {(sync.busy || seed.busy) && (
+          <span className="fine">The agent is classifying and drafting. With a live model, calls are spaced to stay under the provider's rate limit, so this can take a few minutes. Keep this page open.</span>
+        )}
+        {syncNote && !(sync.busy || seed.busy) && <span className="fine">{syncNote}</span>}
       </div>
       <ActionError message={sync.error ?? seed.error} />
+      {aiFailed.length > 0 && (
+        <Notice tone="human" title={`${aiFailed.length} case${aiFailed.length === 1 ? "" : "s"} stopped because the AI model didn't respond`}>
+          <p>Usually the provider's rate limit (too many requests per minute). Nothing was lost; these cases are safe in the exception queue. Retry once the limit resets.</p>
+          {canWork && (
+            <button className="primary" disabled={retry.busy} onClick={retryAll}>
+              {retry.busy ? "Retrying, spacing calls to stay under the limit…" : `Retry ${aiFailed.length} with AI`}
+            </button>
+          )}
+          <ActionError message={retry.error} />
+        </Notice>
+      )}
       {waiting > 0 && <Notice tone="human" title={`${waiting} case${waiting > 1 ? "s" : ""} waiting for a person`} />}
       <LoadState loading={cases.loading && !cases.data} error={cases.error} />
       {cases.data && cases.data.length === 0 && (

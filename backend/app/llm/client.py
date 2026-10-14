@@ -125,7 +125,7 @@ class GeminiLLMClient(LLMClient):
     name = "gemini"
 
     def __init__(self, *, api_key: str, model: str, max_retries: int, timeout: float, max_tokens: int,
-                 temperature: float | None = None):
+                 temperature: float | None = None, max_wait: float = 60.0):
         from google import genai  # imported lazily so the mock path has no hard dependency at import time
         from google.genai import errors, types
 
@@ -137,6 +137,7 @@ class GeminiLLMClient(LLMClient):
         self._max_retries = max(1, max_retries)
         self._max_tokens = max_tokens
         self._temperature = temperature
+        self._max_wait = max_wait
 
     def _is_retryable(self, exc: Exception) -> bool:
         if isinstance(exc, (httpx.TransportError, self._errors.ServerError)):
@@ -164,7 +165,7 @@ class GeminiLLMClient(LLMClient):
                     last_error = exc
                     log.warning("LLM %s attempt %s/%s failed: %s", task, attempt, self._max_retries, type(exc).__name__)
                     if attempt < self._max_retries:
-                        time.sleep(min(2 ** attempt, 8))
+                        time.sleep(self._retry_wait(exc, attempt))
                     continue
                 if isinstance(exc, self._errors.APIError):  # 4xx etc.: not retryable
                     raise LLMError(f"Model request rejected ({getattr(exc, 'code', '?')})") from exc
@@ -181,6 +182,14 @@ class GeminiLLMClient(LLMClient):
                 attempts=attempt,
             )
         raise LLMError(f"Model unavailable after {self._max_retries} attempts: {type(last_error).__name__}")
+
+    def _retry_wait(self, exc: Exception, attempt: int) -> float:
+        """How long to wait before retrying. On 429, Gemini says how long (RetryInfo.retryDelay);
+        honour it, capped, instead of guessing. Otherwise exponential backoff."""
+        backoff = float(min(2 ** attempt, 8))
+        if getattr(exc, "code", None) != 429:
+            return backoff
+        return min(max(parse_retry_delay(getattr(exc, "details", None)) or 0.0, 15.0 * attempt, backoff), self._max_wait)
 
     @staticmethod
     def _function_args(response, tool_name: str) -> dict:
@@ -199,7 +208,28 @@ class GeminiLLMClient(LLMClient):
         raise LLMError(f"Model did not return the required structured output (finish reason: {reason})")
 
 
+def parse_retry_delay(details) -> float | None:
+    """Extract seconds from a Google API error body: {"error": {"details": [{"@type": "...RetryInfo", "retryDelay": "12s"}]}}."""
+    try:
+        error = details.get("error", details) if isinstance(details, dict) else {}
+        for d in error.get("details", []) or []:
+            if str(d.get("@type", "")).endswith("RetryInfo") and d.get("retryDelay"):
+                return float(str(d["retryDelay"]).rstrip("s"))
+    except (AttributeError, TypeError, ValueError):
+        return None
+    return None
+
+
 def build_llm_client(settings: Settings) -> LLMClient:
+    client = _build_provider(settings)
+    if client.name != "mock" and settings.llm_requests_per_minute and settings.llm_requests_per_minute > 0:
+        from app.llm.throttle import ThrottledLLMClient
+        log.info("Model calls throttled to %s per minute", settings.llm_requests_per_minute)
+        return ThrottledLLMClient(client, settings.llm_requests_per_minute)
+    return client
+
+
+def _build_provider(settings: Settings) -> LLMClient:
     from app.llm.mock import MockLLMClient
 
     provider = settings.llm_provider.lower()
@@ -219,6 +249,7 @@ def build_llm_client(settings: Settings) -> LLMClient:
             timeout=settings.llm_timeout_seconds,
             max_tokens=settings.gemini_max_tokens,
             temperature=settings.gemini_temperature,
+            max_wait=settings.llm_max_retry_wait_seconds,
         )
     if provider == "anthropic":
         if not settings.anthropic_api_key:

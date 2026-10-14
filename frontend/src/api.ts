@@ -156,6 +156,7 @@ export interface CaseSummary {
   billed_amount: number;
   denial_code: string | null;
   updated_at: string;
+  escalation_kind: string | null;
 }
 
 export interface RetrievedRecord {
@@ -261,6 +262,9 @@ export const api = {
   cases: (queue?: string) => request<CaseSummary[]>("GET", `/billing/cases${queue ? `?queue=${enc(queue)}` : ""}`),
   case: (id: string) => request<CaseDetail>("GET", `/billing/cases/${enc(id)}`),
   advance: (id: string) => request<CaseDetail>("POST", `/billing/cases/${enc(id)}/advance`),
+  retryAi: (id: string) => request<CaseDetail>("POST", `/billing/cases/${enc(id)}/retry-ai`),
+  retryQueueAi: (queue: string) =>
+    request<{ retried: string[]; recovered: string[]; still_failing: string[] }>("POST", `/billing/queues/${enc(queue)}/retry-ai`),
   reviewClassification: (id: string, body: { decision: "confirm" | "change"; category?: string; note?: string; handling_seconds?: number }) =>
     request<CaseDetail>("POST", `/billing/cases/${enc(id)}/classification-review`, body),
   reviewDraft: (id: string, body: { decision: "approve" | "reject"; edited_text?: string; note?: string; handling_seconds?: number; edit_level?: "none" | "minor" | "major" }) =>

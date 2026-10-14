@@ -51,7 +51,8 @@ function CaseView({ c, onChange }: { c: CaseDetail; onChange: (c: CaseDetail) =>
         </ol>
 
         <div className="case-main">
-          {c.state === "ESCALATED" && (
+          {c.state === "ESCALATED" && c.escalation_kind === "llm_failure" && <RetryAi c={c} canWork={canWork} onChange={onChange} />}
+          {c.state === "ESCALATED" && c.escalation_kind !== "llm_failure" && (
             <Notice tone="critical" title="Stopped and handed to a person">
               {c.escalation_reason}
               {c.owner && <> Owner: {c.owner}.</>} See the exception queue.
@@ -73,6 +74,21 @@ function CaseView({ c, onChange }: { c: CaseDetail; onChange: (c: CaseDetail) =>
         </div>
       </div>
     </section>
+  );
+}
+
+function RetryAi({ c, canWork, onChange }: { c: CaseDetail; canWork: boolean; onChange: (c: CaseDetail) => void }) {
+  const action = useAction();
+  return (
+    <Notice tone="human" title="Stopped because the AI model didn't respond">
+      <p>{c.escalation_reason} This is usually the provider's rate limit. The case is safe; nothing was sent or guessed.</p>
+      {canWork ? (
+        <button className="primary" disabled={action.busy} onClick={() => action.run(async () => onChange(await api.retryAi(c.id)))}>
+          {action.busy ? "Retrying…" : "Retry with AI"}
+        </button>
+      ) : <p className="fine">Billing staff can retry this case.</p>}
+      <ActionError message={action.error} />
+    </Notice>
   );
 }
 
