@@ -17,14 +17,16 @@ def test_sync_is_idempotent(client):
     assert len(client.get("/api/billing/cases", headers=BILLER).json()) == len(first)
 
 
-def test_paid_claim_needs_no_action(client):
-    assert sync(client)["CLM-9007"]["state"] == "NO_ACTION"
+def test_paid_or_recently_worked_claims_need_no_action(client):
+    cases = sync(client)
+    for claim in ("CLM-9007", "CLM-9019", "CLM-9020", "CLM-9024"):
+        assert cases[claim]["state"] == "NO_ACTION", claim
 
 
 def test_every_case_waits_for_human_classification_review(client):
     cases = sync(client)
     for claim_id, c in cases.items():
-        if claim_id != "CLM-9007":
+        if claim_id not in {"CLM-9007", "CLM-9019", "CLM-9020", "CLM-9024"}:
             assert c["state"] == "AWAITING_CLASSIFICATION_REVIEW"
             assert c["category_confirmed"] is False
 

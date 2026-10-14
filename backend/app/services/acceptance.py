@@ -351,8 +351,9 @@ class AcceptanceHarness:
         again = agent.sync_queue(b["queue"], BILLER)
         (ok if again["created"] == 0 else failures).append(f"Duplicate queue read created {again['created']} new cases")
 
-        inj = self._cases[b["injection"]]
-        (ok if "suspicious_content" in inj.flags else failures).append(f"{b['injection']}: instruction-like payer text flagged")
+        for claim in b.get("injections", [b.get("injection")]):
+            inj = self._cases[claim]
+            (ok if "suspicious_content" in inj.flags else failures).append(f"{claim}: instruction-like payer text flagged")
 
         for claim in b["expected_patient_stop"]:
             c = self._cases[claim]

@@ -1,65 +1,370 @@
 {
-  "version": "testset/0.1.0-synthetic",
-  "_notice": "SYNTHETIC labelled test set for the automated acceptance pre-check. The formal D1 test set is defined jointly with Valley Medical, who keep final authority over it, and is far larger.",
-  "as_of_date": "2026-09-01",
-
-  "patient_matching": [
-    {"id": "PM-01", "description": "Internal ID", "input": {"patient_id": "SYN-P-0001"}, "expected": {"status": "matched", "patient_id": "SYN-P-0001"}},
-    {"id": "PM-02", "description": "MRN with agreeing demographics", "input": {"mrn": "SYN100001", "last_name": "Testpatient", "dob": "1971-04-12"}, "expected": {"status": "matched", "patient_id": "SYN-P-0001"}},
-    {"id": "PM-03", "description": "MRN with wrong date of birth", "input": {"mrn": "SYN100002", "last_name": "Samplecase", "dob": "1984-10-30"}, "expected": {"status": "conflict"}},
-    {"id": "PM-04", "description": "Two patients share name and DOB", "input": {"last_name": "Samplecase", "first_name": "Jordan", "dob": "1984-09-30"}, "expected": {"status": "ambiguous"}},
-    {"id": "PM-05", "description": "Demographics only, one candidate", "input": {"last_name": "Testpatient", "dob": "1971-04-12"}, "expected": {"status": "unconfirmed"}},
-    {"id": "PM-06", "description": "MRN not in Meditab (CLM-9090 pattern)", "input": {"mrn": "SYN100008", "last_name": "Democase", "dob": "1959-01-22"}, "expected": {"status": "no_match"}},
-    {"id": "PM-07", "description": "Look-alike patient by MRN", "input": {"mrn": "SYN100003", "last_name": "Samplecase", "first_name": "Jordan", "dob": "1984-09-30"}, "expected": {"status": "matched", "patient_id": "SYN-P-0003"}},
-    {"id": "PM-08", "description": "First-name misspelling", "input": {"mrn": "SYN100004", "last_name": "Democase", "first_name": "Rylee", "dob": "1959-01-22"}, "expected": {"status": "conflict"}},
-    {"id": "PM-09", "description": "Internal ID with another patient's MRN", "input": {"patient_id": "SYN-P-0002", "mrn": "SYN100003"}, "expected": {"status": "conflict"}},
-    {"id": "PM-10", "description": "Unknown internal ID", "input": {"patient_id": "SYN-P-9999"}, "expected": {"status": "no_match"}}
-  ],
-
-  "documents": {"expected_quarantined": ["DOC-4001"]},
-
-  "retrieval": {
-    "SYN-P-0001": ["encounters:ENC-1001", "encounters:ENC-1002", "encounters:ENC-1003",
-                   "medications:MED-0001", "medications:MED-0002", "medications:MED-0003", "allergies:ALG-0001",
-                   "problems:PRB-0001", "problems:PRB-0002", "problems:PRB-0003", "labs:LAB-0001", "labs:LAB-0002",
-                   "observations:OBS-0001", "observations:OBS-0002", "observations:OBS-0003", "observations:OBS-0004",
-                   "observations:OBS-0005", "observations:OBS-0006", "observations:OBS-0007", "observations:OBS-0008",
-                   "observations:OBS-0009", "procedures:PRC-0001", "procedures:PRC-0002",
-                   "documents:DOC-2001#p1", "documents:DOC-2001#p2", "documents:DOC-2002#p1"],
-    "SYN-P-0002": ["encounters:ENC-2001", "encounters:ENC-2002", "medications:MED-0004", "problems:PRB-0004",
-                   "observations:OBS-0010", "procedures:PRC-0003"],
-    "SYN-P-0003": ["encounters:ENC-3001"],
-    "SYN-P-0004": ["encounters:ENC-4001", "medications:MED-0005", "allergies:ALG-0002", "problems:PRB-0005",
-                   "labs:LAB-0003", "observations:OBS-0011", "documents:DOC-4002#p1"]
+ "version": "testset/0.2.0-synthetic",
+ "_notice": "SYNTHETIC labelled test set for the automated acceptance pre-check. The formal D1 test set is defined jointly with Valley Medical, who keep final authority over it, and is far larger.",
+ "as_of_date": "2026-09-01",
+ "patient_matching": [
+  {
+   "id": "PM-01",
+   "description": "Internal ID",
+   "input": {
+    "patient_id": "SYN-P-0001"
+   },
+   "expected": {
+    "status": "matched",
+    "patient_id": "SYN-P-0001"
+   }
   },
-
-  "summaries": ["SYN-P-0001", "SYN-P-0002", "SYN-P-0004"],
-
-  "documentation_audit": {
-    "SYN-P-0001": ["DA-01:ENC-1002", "DA-05:PRC-0001", "DA-06:ENC-1002"],
-    "SYN-P-0002": ["DA-01:ENC-2002", "DA-03:patient", "DA-04:patient", "DA-06:ENC-2002", "DA-07:ENC-2002"],
-    "SYN-P-0003": ["DA-04:patient", "DA-06:ENC-3001"],
-    "SYN-P-0004": ["DA-02:ENC-4001", "DA-03:patient"]
+  {
+   "id": "PM-02",
+   "description": "MRN with agreeing demographics",
+   "input": {
+    "mrn": "SYN100001",
+    "last_name": "Testpatient",
+    "dob": "1971-04-12"
+   },
+   "expected": {
+    "status": "matched",
+    "patient_id": "SYN-P-0001"
+   }
   },
-
-  "billing": {
-    "queue": "denials-team-a",
-    "labels": {
-      "CLM-9001": "MEDICAL_NECESSITY", "CLM-9002": "MEDICAL_NECESSITY", "CLM-9003": "TIMELY_FILING",
-      "CLM-9004": "MISSING_DOCUMENTATION", "CLM-9005": "CODING_ERROR", "CLM-9006": "NO_PAYER_RESPONSE",
-      "CLM-9008": "CODING_ERROR", "CLM-9090": "CODING_ERROR"
-    },
-    "no_action": ["CLM-9007"],
-    "supporting_records": {
-      "CLM-9001": ["encounters:ENC-1002", "procedures:PRC-0001", "documents:DOC-2001#p1", "documents:DOC-2001#p2"],
-      "CLM-9002": ["encounters:ENC-2002"],
-      "CLM-9004": ["encounters:ENC-2001"],
-      "CLM-9008": ["encounters:ENC-4001", "problems:PRB-0005"]
-    },
-    "expected_gaps": {"CLM-9001": [], "CLM-9002": ["conservative_treatment", "imaging"], "CLM-9004": [], "CLM-9008": []},
-    "expected_patient_stop": ["CLM-9005", "CLM-9090"],
-    "expected_hard_stop": ["CLM-9003"],
-    "injection": "CLM-9004",
-    "approve_for_routing": "CLM-9001"
+  {
+   "id": "PM-03",
+   "description": "MRN with wrong date of birth",
+   "input": {
+    "mrn": "SYN100002",
+    "last_name": "Samplecase",
+    "dob": "1984-10-30"
+   },
+   "expected": {
+    "status": "conflict"
+   }
+  },
+  {
+   "id": "PM-04",
+   "description": "Two patients share name and DOB",
+   "input": {
+    "last_name": "Samplecase",
+    "first_name": "Jordan",
+    "dob": "1984-09-30"
+   },
+   "expected": {
+    "status": "ambiguous"
+   }
+  },
+  {
+   "id": "PM-05",
+   "description": "Demographics only, one candidate",
+   "input": {
+    "last_name": "Testpatient",
+    "dob": "1971-04-12"
+   },
+   "expected": {
+    "status": "unconfirmed"
+   }
+  },
+  {
+   "id": "PM-06",
+   "description": "MRN not in Meditab (CLM-9090 pattern)",
+   "input": {
+    "mrn": "SYN100008",
+    "last_name": "Democase",
+    "dob": "1959-01-22"
+   },
+   "expected": {
+    "status": "no_match"
+   }
+  },
+  {
+   "id": "PM-07",
+   "description": "Look-alike patient by MRN",
+   "input": {
+    "mrn": "SYN100003",
+    "last_name": "Samplecase",
+    "first_name": "Jordan",
+    "dob": "1984-09-30"
+   },
+   "expected": {
+    "status": "matched",
+    "patient_id": "SYN-P-0003"
+   }
+  },
+  {
+   "id": "PM-08",
+   "description": "First-name misspelling",
+   "input": {
+    "mrn": "SYN100004",
+    "last_name": "Democase",
+    "first_name": "Rylee",
+    "dob": "1959-01-22"
+   },
+   "expected": {
+    "status": "conflict"
+   }
+  },
+  {
+   "id": "PM-09",
+   "description": "Internal ID with another patient's MRN",
+   "input": {
+    "patient_id": "SYN-P-0002",
+    "mrn": "SYN100003"
+   },
+   "expected": {
+    "status": "conflict"
+   }
+  },
+  {
+   "id": "PM-10",
+   "description": "Unknown internal ID",
+   "input": {
+    "patient_id": "SYN-P-9999"
+   },
+   "expected": {
+    "status": "no_match"
+   }
+  },
+  {
+   "id": "PM-11",
+   "description": "Last-name typo on a claim (CLM-9026 pattern)",
+   "input": {
+    "mrn": "SYN100006",
+    "last_name": "Mockwel",
+    "first_name": "Casey",
+    "dob": "1978-11-02"
+   },
+   "expected": {
+    "status": "conflict"
+   }
   }
+ ],
+ "documents": {
+  "expected_quarantined": [
+   "DOC-4001"
+  ]
+ },
+ "retrieval": {
+  "SYN-P-0001": [
+   "encounters:ENC-1001",
+   "encounters:ENC-1002",
+   "encounters:ENC-1003",
+   "medications:MED-0001",
+   "medications:MED-0002",
+   "medications:MED-0003",
+   "allergies:ALG-0001",
+   "problems:PRB-0001",
+   "problems:PRB-0002",
+   "problems:PRB-0003",
+   "labs:LAB-0001",
+   "labs:LAB-0002",
+   "observations:OBS-0001",
+   "observations:OBS-0002",
+   "observations:OBS-0003",
+   "observations:OBS-0004",
+   "observations:OBS-0005",
+   "observations:OBS-0006",
+   "observations:OBS-0007",
+   "observations:OBS-0008",
+   "observations:OBS-0009",
+   "procedures:PRC-0001",
+   "procedures:PRC-0002",
+   "documents:DOC-2001#p1",
+   "documents:DOC-2001#p2",
+   "documents:DOC-2002#p1"
+  ],
+  "SYN-P-0002": [
+   "encounters:ENC-2001",
+   "encounters:ENC-2002",
+   "medications:MED-0004",
+   "problems:PRB-0004",
+   "observations:OBS-0010",
+   "procedures:PRC-0003"
+  ],
+  "SYN-P-0003": [
+   "encounters:ENC-3001"
+  ],
+  "SYN-P-0004": [
+   "encounters:ENC-4001",
+   "medications:MED-0005",
+   "allergies:ALG-0002",
+   "problems:PRB-0005",
+   "labs:LAB-0003",
+   "observations:OBS-0011",
+   "documents:DOC-4002#p1"
+  ],
+  "SYN-P-0005": [
+   "encounters:ENC-5001",
+   "encounters:ENC-5002",
+   "encounters:ENC-5003",
+   "medications:MED-0006",
+   "allergies:ALG-0003",
+   "problems:PRB-0006",
+   "problems:PRB-0007",
+   "observations:OBS-0012",
+   "observations:OBS-0013",
+   "observations:OBS-0014",
+   "observations:OBS-0015",
+   "procedures:PRC-0004",
+   "procedures:PRC-0005",
+   "procedures:PRC-0006",
+   "documents:DOC-5001#p1",
+   "documents:DOC-5001#p2"
+  ],
+  "SYN-P-0008": [
+   "encounters:ENC-8001",
+   "encounters:ENC-8002",
+   "encounters:ENC-8003",
+   "medications:MED-0010",
+   "allergies:ALG-0005",
+   "problems:PRB-0010",
+   "observations:OBS-0017",
+   "observations:OBS-0018",
+   "observations:OBS-0019",
+   "procedures:PRC-0010",
+   "documents:DOC-8001#p1"
+  ]
+ },
+ "summaries": [
+  "SYN-P-0001",
+  "SYN-P-0002",
+  "SYN-P-0004"
+ ],
+ "documentation_audit": {
+  "SYN-P-0001": [
+   "DA-01:ENC-1002",
+   "DA-05:PRC-0001",
+   "DA-06:ENC-1002"
+  ],
+  "SYN-P-0002": [
+   "DA-01:ENC-2002",
+   "DA-03:patient",
+   "DA-04:patient",
+   "DA-06:ENC-2002",
+   "DA-07:ENC-2002"
+  ],
+  "SYN-P-0003": [
+   "DA-04:patient",
+   "DA-06:ENC-3001"
+  ],
+  "SYN-P-0004": [
+   "DA-02:ENC-4001",
+   "DA-03:patient"
+  ]
+ },
+ "billing": {
+  "queue": "denials-team-a",
+  "labels": {
+   "CLM-9001": "MEDICAL_NECESSITY",
+   "CLM-9002": "MEDICAL_NECESSITY",
+   "CLM-9003": "TIMELY_FILING",
+   "CLM-9004": "MISSING_DOCUMENTATION",
+   "CLM-9005": "CODING_ERROR",
+   "CLM-9006": "NO_PAYER_RESPONSE",
+   "CLM-9008": "CODING_ERROR",
+   "CLM-9090": "CODING_ERROR",
+   "CLM-9009": "MEDICAL_NECESSITY",
+   "CLM-9010": "MISSING_PRIOR_AUTH",
+   "CLM-9011": "MEDICAL_NECESSITY",
+   "CLM-9012": "MISSING_PRIOR_AUTH",
+   "CLM-9013": "MISSING_DOCUMENTATION",
+   "CLM-9014": "CODING_ERROR",
+   "CLM-9015": "ELIGIBILITY",
+   "CLM-9016": "ELIGIBILITY",
+   "CLM-9017": "DUPLICATE",
+   "CLM-9018": "NO_PAYER_RESPONSE",
+   "CLM-9021": "CODING_ERROR",
+   "CLM-9022": "NO_PAYER_RESPONSE",
+   "CLM-9023": "MISSING_DOCUMENTATION",
+   "CLM-9025": "MISSING_DOCUMENTATION",
+   "CLM-9026": "MEDICAL_NECESSITY",
+   "CLM-9027": "MEDICAL_NECESSITY",
+   "CLM-9028": "TIMELY_FILING",
+   "CLM-9029": "NO_PAYER_RESPONSE",
+   "CLM-9030": "OTHER"
+  },
+  "no_action": [
+   "CLM-9007",
+   "CLM-9019",
+   "CLM-9020",
+   "CLM-9024"
+  ],
+  "supporting_records": {
+   "CLM-9001": [
+    "encounters:ENC-1002",
+    "procedures:PRC-0001",
+    "documents:DOC-2001#p1",
+    "documents:DOC-2001#p2"
+   ],
+   "CLM-9002": [
+    "encounters:ENC-2002"
+   ],
+   "CLM-9004": [
+    "encounters:ENC-2001"
+   ],
+   "CLM-9008": [
+    "encounters:ENC-4001",
+    "problems:PRB-0005"
+   ],
+   "CLM-9009": [
+    "encounters:ENC-5003",
+    "procedures:PRC-0004",
+    "procedures:PRC-0005",
+    "documents:DOC-5001#p1",
+    "documents:DOC-5001#p2"
+   ],
+   "CLM-9010": [
+    "encounters:ENC-5002"
+   ],
+   "CLM-9011": [
+    "encounters:ENC-6002"
+   ],
+   "CLM-9013": [
+    "encounters:ENC-7002",
+    "procedures:PRC-0008"
+   ],
+   "CLM-9014": [
+    "encounters:ENC-8002",
+    "problems:PRB-0010"
+   ],
+   "CLM-9023": [
+    "encounters:ENC-8001"
+   ]
+  },
+  "expected_gaps": {
+   "CLM-9001": [],
+   "CLM-9002": [
+    "conservative_treatment",
+    "imaging"
+   ],
+   "CLM-9004": [],
+   "CLM-9008": [],
+   "CLM-9009": [],
+   "CLM-9010": [],
+   "CLM-9011": [
+    "conservative_treatment",
+    "imaging"
+   ],
+   "CLM-9013": [],
+   "CLM-9014": [],
+   "CLM-9023": [
+    "dos_procedure"
+   ]
+  },
+  "expected_patient_stop": [
+   "CLM-9005",
+   "CLM-9026",
+   "CLM-9090"
+  ],
+  "expected_hard_stop": [
+   "CLM-9003",
+   "CLM-9015",
+   "CLM-9016",
+   "CLM-9017",
+   "CLM-9028"
+  ],
+  "injection": "CLM-9004",
+  "approve_for_routing": "CLM-9001",
+  "injections": [
+   "CLM-9004",
+   "CLM-9025"
+  ]
+ }
 }

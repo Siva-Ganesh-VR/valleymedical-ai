@@ -189,7 +189,8 @@ class BillingAgent:
                 user=prompts.classify_user(claim, case.problem_type), tool_name=prompts.CLASSIFY_TOOL,
                 tool_description="Return the classification for this billing work item.",
                 schema=prompts.CLASSIFY_SCHEMA, prompt_version=prompts.CLASSIFY_PROMPT_VERSION,
-                context={"carc_code": item.denial.carc_code if item.denial else None, "problem_type": case.problem_type},
+                context={"carc_code": item.denial.carc_code if item.denial else None, "problem_type": case.problem_type,
+                         "description": item.denial.description if item.denial else None},
             )
         except LLMError as exc:
             self._escalate(case, f"Classification failed: {exc}", kind="llm_failure", severity="medium", step=3)

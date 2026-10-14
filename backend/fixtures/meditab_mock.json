@@ -1,85 +1,1024 @@
 {
-  "_notice": "SYNTHETIC DATA ONLY. Not real patients. Names, MRNs and records are invented for the POC.",
-  "patients": [
-    {"patient_id": "SYN-P-0001", "mrn": "SYN100001", "first_name": "Avery", "last_name": "Testpatient", "dob": "1971-04-12", "sex": "F"},
-    {"patient_id": "SYN-P-0002", "mrn": "SYN100002", "first_name": "Jordan", "last_name": "Samplecase", "dob": "1984-09-30", "sex": "M"},
-    {"patient_id": "SYN-P-0003", "mrn": "SYN100003", "first_name": "Jordan", "last_name": "Samplecase", "dob": "1984-09-30", "sex": "M"},
-    {"patient_id": "SYN-P-0004", "mrn": "SYN100004", "first_name": "Riley", "last_name": "Democase", "dob": "1959-01-22", "sex": "F"}
-  ],
-  "simulated_outages": {
-    "SYN-P-0004": ["labs"]
+ "_notice": "SYNTHETIC DATA ONLY. Not real patients. Names, MRNs and records are invented for the POC.",
+ "patients": [
+  {
+   "patient_id": "SYN-P-0001",
+   "mrn": "SYN100001",
+   "first_name": "Avery",
+   "last_name": "Testpatient",
+   "dob": "1971-04-12",
+   "sex": "F"
   },
-  "encounters": [
-    {"encounter_id": "ENC-1001", "patient_id": "SYN-P-0001", "date": "2026-03-12", "type": "Office visit", "provider": "Dr. Synthetic Provider A", "note_text": "Synthetic note. Chronic low back pain radiating to the left leg for 2 years. Pain 8/10. Completed 6 weeks of physical therapy with minimal improvement. MRI shows L4-L5 disc protrusion. Plan: lumbar epidural steroid injection at L4-L5. Continue gabapentin."},
-    {"encounter_id": "ENC-1002", "patient_id": "SYN-P-0001", "date": "2026-04-02", "type": "Procedure visit", "provider": "Dr. Synthetic Provider A", "note_text": "Synthetic note. Lumbar epidural steroid injection at L4-L5 performed under fluoroscopic guidance. Indication: left L5 radiculopathy not responding to conservative care. Tolerated well, no complications."},
-    {"encounter_id": "ENC-1003", "patient_id": "SYN-P-0001", "date": "2026-05-14", "type": "Follow-up visit", "provider": "Dr. Synthetic Provider A", "note_text": "Synthetic note. Pain 5/10 since injection. Sleep improved to about 6 hours. Mood better. Continue home exercise program and gabapentin."},
-    {"encounter_id": "ENC-2001", "patient_id": "SYN-P-0002", "date": "2026-02-10", "type": "Office visit", "provider": "Dr. Synthetic Provider B", "note_text": "Synthetic note. Right knee pain 6/10 for 4 months, worse on stairs. Exam: crepitus, mild effusion. Assessment: primary osteoarthritis of right knee. Plan: naproxen, consider injection."},
-    {"encounter_id": "ENC-2002", "patient_id": "SYN-P-0002", "date": "2026-02-24", "type": "Procedure visit", "provider": "Dr. Synthetic Provider B", "note_text": "Synthetic note. Right knee corticosteroid injection performed. Tolerated well."},
-    {"encounter_id": "ENC-3001", "patient_id": "SYN-P-0003", "date": "2026-01-08", "type": "Office visit", "provider": "Dr. Synthetic Provider C", "note_text": "Synthetic note. Annual wellness visit. No acute complaints."},
-    {"encounter_id": "ENC-4001", "patient_id": "SYN-P-0004", "date": "2026-06-05", "type": "Follow-up visit", "provider": "Dr. Synthetic Provider A", "note_text": "Synthetic note. Follow-up for chronic neck pain. Pain 6/10. Sleep poor. Continue duloxetine. Outside cervical MRI received for review."}
-  ],
-  "medications": [
-    {"med_id": "MED-0001", "patient_id": "SYN-P-0001", "name": "Gabapentin", "dose": "300 mg", "frequency": "three times daily", "start_date": "2025-11-03", "status": "active"},
-    {"med_id": "MED-0002", "patient_id": "SYN-P-0001", "name": "Meloxicam", "dose": "15 mg", "frequency": "once daily", "start_date": "2026-01-10", "status": "active"},
-    {"med_id": "MED-0003", "patient_id": "SYN-P-0001", "name": "Cyclobenzaprine", "dose": "5 mg", "frequency": "at bedtime as needed", "start_date": "2025-11-03", "end_date": "2026-03-12", "status": "stopped", "encounter_id": "ENC-1001"},
-    {"med_id": "MED-0004", "patient_id": "SYN-P-0002", "name": "Naproxen", "dose": "500 mg", "frequency": "twice daily", "start_date": "2026-02-10", "status": "active", "encounter_id": "ENC-2001"},
-    {"med_id": "MED-0005", "patient_id": "SYN-P-0004", "name": "Duloxetine", "dose": "30 mg", "frequency": "once daily", "start_date": "2025-08-19", "status": "active"}
-  ],
-  "allergies": [
-    {"allergy_id": "ALG-0001", "patient_id": "SYN-P-0001", "substance": "Penicillin", "reaction": "hives", "severity": "moderate", "recorded_on": "2019-06-01"},
-    {"allergy_id": "ALG-0002", "patient_id": "SYN-P-0004", "substance": "Sulfa drugs", "reaction": "rash", "severity": "mild", "recorded_on": "2015-03-17"}
-  ],
-  "problems": [
-    {"problem_id": "PRB-0001", "patient_id": "SYN-P-0001", "description": "Chronic low back pain", "icd10": "M54.50", "status": "active", "onset": "2024-03-01"},
-    {"problem_id": "PRB-0002", "patient_id": "SYN-P-0001", "description": "Lumbar radiculopathy", "icd10": "M54.16", "status": "active", "onset": "2024-05-15"},
-    {"problem_id": "PRB-0003", "patient_id": "SYN-P-0001", "description": "Insomnia", "icd10": "G47.00", "status": "active", "onset": "2025-02-01"},
-    {"problem_id": "PRB-0004", "patient_id": "SYN-P-0002", "description": "Primary osteoarthritis, right knee", "icd10": "M17.11", "status": "active", "onset": "2025-10-01"},
-    {"problem_id": "PRB-0005", "patient_id": "SYN-P-0004", "description": "Cervicalgia", "icd10": "M54.2", "status": "active", "onset": "2023-11-20"}
-  ],
-  "labs": [
-    {"lab_id": "LAB-0001", "patient_id": "SYN-P-0001", "test": "Creatinine", "value": "0.9", "unit": "mg/dL", "reference_range": "0.6-1.2", "collected_on": "2026-03-12", "encounter_id": "ENC-1001"},
-    {"lab_id": "LAB-0002", "patient_id": "SYN-P-0001", "test": "Hemoglobin A1c", "value": "5.6", "unit": "%", "reference_range": "4.0-5.6", "collected_on": "2026-03-12", "encounter_id": "ENC-1001"},
-    {"lab_id": "LAB-0003", "patient_id": "SYN-P-0004", "test": "ALT", "value": "22", "unit": "U/L", "reference_range": "7-56", "collected_on": "2026-06-05", "encounter_id": "ENC-4001"}
-  ],
-  "observations": [
-    {"obs_id": "OBS-0001", "patient_id": "SYN-P-0001", "dimension": "pain", "instrument": "NRS 0-10", "value": 7, "unit": "/10", "recorded_on": "2025-12-01"},
-    {"obs_id": "OBS-0002", "patient_id": "SYN-P-0001", "dimension": "pain", "instrument": "NRS 0-10", "value": 8, "unit": "/10", "recorded_on": "2026-03-12", "encounter_id": "ENC-1001"},
-    {"obs_id": "OBS-0003", "patient_id": "SYN-P-0001", "dimension": "pain", "instrument": "NRS 0-10", "value": 5, "unit": "/10", "recorded_on": "2026-05-14", "encounter_id": "ENC-1003"},
-    {"obs_id": "OBS-0004", "patient_id": "SYN-P-0001", "dimension": "function", "instrument": "Oswestry Disability Index", "value": 46, "unit": "%", "recorded_on": "2026-03-12", "encounter_id": "ENC-1001"},
-    {"obs_id": "OBS-0005", "patient_id": "SYN-P-0001", "dimension": "function", "instrument": "Oswestry Disability Index", "value": 30, "unit": "%", "recorded_on": "2026-05-14", "encounter_id": "ENC-1003"},
-    {"obs_id": "OBS-0006", "patient_id": "SYN-P-0001", "dimension": "sleep", "instrument": "Self-reported hours per night", "value": 4, "unit": "hours", "recorded_on": "2026-03-12", "encounter_id": "ENC-1001"},
-    {"obs_id": "OBS-0007", "patient_id": "SYN-P-0001", "dimension": "sleep", "instrument": "Self-reported hours per night", "value": 6, "unit": "hours", "recorded_on": "2026-05-14", "encounter_id": "ENC-1003"},
-    {"obs_id": "OBS-0008", "patient_id": "SYN-P-0001", "dimension": "mood", "instrument": "PHQ-9", "value": 11, "unit": "points", "recorded_on": "2026-03-12", "encounter_id": "ENC-1001"},
-    {"obs_id": "OBS-0009", "patient_id": "SYN-P-0001", "dimension": "mood", "instrument": "PHQ-9", "value": 7, "unit": "points", "recorded_on": "2026-05-14", "encounter_id": "ENC-1003"},
-    {"obs_id": "OBS-0010", "patient_id": "SYN-P-0002", "dimension": "pain", "instrument": "NRS 0-10", "value": 6, "unit": "/10", "recorded_on": "2026-02-10", "encounter_id": "ENC-2001"},
-    {"obs_id": "OBS-0011", "patient_id": "SYN-P-0004", "dimension": "pain", "instrument": "NRS 0-10", "value": 6, "unit": "/10", "recorded_on": "2026-06-05", "encounter_id": "ENC-4001"}
-  ],
-  "procedures": [
-    {"procedure_id": "PRC-0001", "patient_id": "SYN-P-0001", "name": "Physical therapy, 6-week course", "cpt": "97110", "performed_on": "2026-01-15", "outcome_note": "Completed 6 weeks; minimal improvement in pain."},
-    {"procedure_id": "PRC-0002", "patient_id": "SYN-P-0001", "name": "Lumbar epidural steroid injection, L4-L5", "cpt": "62323", "performed_on": "2026-04-02", "encounter_id": "ENC-1002", "outcome_note": "No complications."},
-    {"procedure_id": "PRC-0003", "patient_id": "SYN-P-0002", "name": "Right knee corticosteroid injection", "cpt": "20610", "performed_on": "2026-02-24", "encounter_id": "ENC-2002", "outcome_note": "Tolerated well."}
-  ],
-  "documents": [
-    {"document_id": "DOC-2001", "patient_id": "SYN-P-0001", "title": "MRI lumbar spine report", "doc_type": "imaging_report", "document_date": "2026-02-20",
-     "embedded_identifiers": {"mrn": "SYN100001", "dob": "1971-04-12", "last_name": "Testpatient", "first_name": "Avery"},
-     "pages": [
-       {"page": 1, "text": "SYNTHETIC REPORT. Patient: Avery Testpatient. MRN SYN100001. MRI lumbar spine without contrast. Indication: low back pain with left leg radiation."},
-       {"page": 2, "text": "Findings: L4-L5 disc protrusion with left foraminal narrowing contacting the L5 nerve root. Impression: L4-L5 disc protrusion, correlate for left L5 radiculopathy."}
-     ]},
-    {"document_id": "DOC-2002", "patient_id": "SYN-P-0001", "title": "Physical therapy discharge summary", "doc_type": "therapy_summary", "document_date": "2026-03-01",
-     "embedded_identifiers": {"mrn": "SYN100001", "dob": "1971-04-12", "last_name": "Testpatient"},
-     "pages": [
-       {"page": 1, "text": "SYNTHETIC SUMMARY. 12 sessions over 6 weeks. Pain unchanged at discharge. Recommend specialist follow-up."}
-     ]},
-    {"document_id": "DOC-4001", "patient_id": "SYN-P-0004", "title": "Outside records: cervical MRI", "doc_type": "imaging_report", "document_date": "2026-05-28",
-     "embedded_identifiers": {"mrn": "SYN100099", "dob": "1962-07-04", "last_name": "Otherperson"},
-     "pages": [
-       {"page": 1, "text": "SYNTHETIC OUTSIDE REPORT. Patient: Casey Otherperson. MRN SYN100099. Cervical MRI: C5-C6 disc degeneration."}
-     ]},
-    {"document_id": "DOC-4002", "patient_id": "SYN-P-0004", "title": "Pain clinic intake form", "doc_type": "intake_form", "document_date": "2025-08-19",
-     "embedded_identifiers": {"mrn": "SYN100004", "dob": "1959-01-22", "last_name": "Democase"},
-     "pages": [
-       {"page": 1, "text": "SYNTHETIC FORM. Neck pain for 3 years. Prior treatment: physical therapy, NSAIDs."}
-     ]}
+  {
+   "patient_id": "SYN-P-0002",
+   "mrn": "SYN100002",
+   "first_name": "Jordan",
+   "last_name": "Samplecase",
+   "dob": "1984-09-30",
+   "sex": "M"
+  },
+  {
+   "patient_id": "SYN-P-0003",
+   "mrn": "SYN100003",
+   "first_name": "Jordan",
+   "last_name": "Samplecase",
+   "dob": "1984-09-30",
+   "sex": "M"
+  },
+  {
+   "patient_id": "SYN-P-0004",
+   "mrn": "SYN100004",
+   "first_name": "Riley",
+   "last_name": "Democase",
+   "dob": "1959-01-22",
+   "sex": "F"
+  },
+  {
+   "patient_id": "SYN-P-0005",
+   "mrn": "SYN100005",
+   "first_name": "Morgan",
+   "last_name": "Exampleton",
+   "dob": "1966-07-18",
+   "sex": "F"
+  },
+  {
+   "patient_id": "SYN-P-0006",
+   "mrn": "SYN100006",
+   "first_name": "Casey",
+   "last_name": "Mockwell",
+   "dob": "1978-11-02",
+   "sex": "M"
+  },
+  {
+   "patient_id": "SYN-P-0007",
+   "mrn": "SYN100007",
+   "first_name": "Jamie",
+   "last_name": "Fixture",
+   "dob": "1990-05-25",
+   "sex": "F"
+  },
+  {
+   "patient_id": "SYN-P-0008",
+   "mrn": "SYN100010",
+   "first_name": "Taylor",
+   "last_name": "Placeholder",
+   "dob": "1955-12-09",
+   "sex": "M"
+  },
+  {
+   "patient_id": "SYN-P-0009",
+   "mrn": "SYN100011",
+   "first_name": "Quinn",
+   "last_name": "Sampleson",
+   "dob": "1983-03-14",
+   "sex": "F"
+  },
+  {
+   "patient_id": "SYN-P-0010",
+   "mrn": "SYN100012",
+   "first_name": "Rowan",
+   "last_name": "Testcase",
+   "dob": "1948-08-30",
+   "sex": "M"
+  }
+ ],
+ "simulated_outages": {
+  "SYN-P-0004": [
+   "labs"
   ]
+ },
+ "encounters": [
+  {
+   "encounter_id": "ENC-1001",
+   "patient_id": "SYN-P-0001",
+   "date": "2026-03-12",
+   "type": "Office visit",
+   "provider": "Dr. Synthetic Provider A",
+   "note_text": "Synthetic note. Chronic low back pain radiating to the left leg for 2 years. Pain 8/10. Completed 6 weeks of physical therapy with minimal improvement. MRI shows L4-L5 disc protrusion. Plan: lumbar epidural steroid injection at L4-L5. Continue gabapentin."
+  },
+  {
+   "encounter_id": "ENC-1002",
+   "patient_id": "SYN-P-0001",
+   "date": "2026-04-02",
+   "type": "Procedure visit",
+   "provider": "Dr. Synthetic Provider A",
+   "note_text": "Synthetic note. Lumbar epidural steroid injection at L4-L5 performed under fluoroscopic guidance. Indication: left L5 radiculopathy not responding to conservative care. Tolerated well, no complications."
+  },
+  {
+   "encounter_id": "ENC-1003",
+   "patient_id": "SYN-P-0001",
+   "date": "2026-05-14",
+   "type": "Follow-up visit",
+   "provider": "Dr. Synthetic Provider A",
+   "note_text": "Synthetic note. Pain 5/10 since injection. Sleep improved to about 6 hours. Mood better. Continue home exercise program and gabapentin."
+  },
+  {
+   "encounter_id": "ENC-2001",
+   "patient_id": "SYN-P-0002",
+   "date": "2026-02-10",
+   "type": "Office visit",
+   "provider": "Dr. Synthetic Provider B",
+   "note_text": "Synthetic note. Right knee pain 6/10 for 4 months, worse on stairs. Exam: crepitus, mild effusion. Assessment: primary osteoarthritis of right knee. Plan: naproxen, consider injection."
+  },
+  {
+   "encounter_id": "ENC-2002",
+   "patient_id": "SYN-P-0002",
+   "date": "2026-02-24",
+   "type": "Procedure visit",
+   "provider": "Dr. Synthetic Provider B",
+   "note_text": "Synthetic note. Right knee corticosteroid injection performed. Tolerated well."
+  },
+  {
+   "encounter_id": "ENC-3001",
+   "patient_id": "SYN-P-0003",
+   "date": "2026-01-08",
+   "type": "Office visit",
+   "provider": "Dr. Synthetic Provider C",
+   "note_text": "Synthetic note. Annual wellness visit. No acute complaints."
+  },
+  {
+   "encounter_id": "ENC-4001",
+   "patient_id": "SYN-P-0004",
+   "date": "2026-06-05",
+   "type": "Follow-up visit",
+   "provider": "Dr. Synthetic Provider A",
+   "note_text": "Synthetic note. Follow-up for chronic neck pain. Pain 6/10. Sleep poor. Continue duloxetine. Outside cervical MRI received for review."
+  },
+  {
+   "encounter_id": "ENC-5001",
+   "patient_id": "SYN-P-0005",
+   "date": "2026-03-03",
+   "type": "Office visit",
+   "provider": "Dr. Synthetic Provider A",
+   "note_text": "Synthetic note. Axial low back pain for 3 years, worse with extension. Pain 7/10. Completed 8 weeks of physical therapy without lasting relief. MRI shows facet arthropathy L4-S1. Plan: diagnostic medial branch blocks at L4-L5 and L5-S1."
+  },
+  {
+   "encounter_id": "ENC-5002",
+   "patient_id": "SYN-P-0005",
+   "date": "2026-04-14",
+   "type": "Procedure visit",
+   "provider": "Dr. Synthetic Provider A",
+   "note_text": "Synthetic note. Bilateral L4-L5 and L5-S1 medial branch blocks under fluoroscopy. Indication: suspected facet-mediated pain after failed conservative care. Pain improved from 7/10 to 1/10 for 6 hours, more than 80% relief. Plan: radiofrequency ablation if relief is confirmed."
+  },
+  {
+   "encounter_id": "ENC-5003",
+   "patient_id": "SYN-P-0005",
+   "date": "2026-06-02",
+   "type": "Procedure visit",
+   "provider": "Dr. Synthetic Provider A",
+   "note_text": "Synthetic note. Radiofrequency ablation of the L4-L5 and L5-S1 medial branches. Indication: more than 80% relief after diagnostic medial branch blocks. Pain 6/10 before the procedure. No complications. Plan: follow up in 6 weeks."
+  },
+  {
+   "encounter_id": "ENC-6001",
+   "patient_id": "SYN-P-0006",
+   "date": "2026-02-17",
+   "type": "Office visit",
+   "provider": "Dr. Synthetic Provider B",
+   "note_text": "Synthetic note. Neck pain radiating to the right arm for 5 months with numbness in the thumb. Pain 6/10. Exam: reduced right biceps reflex. Plan: cervical epidural steroid injection; consider MRI."
+  },
+  {
+   "encounter_id": "ENC-6002",
+   "patient_id": "SYN-P-0006",
+   "date": "2026-03-24",
+   "type": "Procedure visit",
+   "provider": "Dr. Synthetic Provider B",
+   "note_text": "Synthetic note. Cervical interlaminar epidural steroid injection at C6-C7. Tolerated well."
+  },
+  {
+   "encounter_id": "ENC-7001",
+   "patient_id": "SYN-P-0007",
+   "date": "2026-04-08",
+   "type": "Office visit",
+   "provider": "Dr. Synthetic Provider D",
+   "note_text": "Synthetic note. Chronic migraine with 18 headache days a month despite trials of topiramate and propranolol. Occipital tenderness. Plan: occipital nerve block; consider chemodenervation if there is no response."
+  },
+  {
+   "encounter_id": "ENC-7002",
+   "patient_id": "SYN-P-0007",
+   "date": "2026-05-06",
+   "type": "Procedure visit",
+   "provider": "Dr. Synthetic Provider D",
+   "note_text": "Synthetic note. Bilateral greater occipital nerve block. Indication: chronic migraine with occipital tenderness after two failed preventive medications. Tolerated well."
+  },
+  {
+   "encounter_id": "ENC-7003",
+   "patient_id": "SYN-P-0007",
+   "date": "2026-07-15",
+   "type": "Procedure visit",
+   "provider": "Dr. Synthetic Provider D",
+   "note_text": "Synthetic note. Chemodenervation for chronic migraine, 155 units across 31 sites. Indication: chronic migraine, failed two preventive medication classes. No complications. Plan: repeat in 12 weeks."
+  },
+  {
+   "encounter_id": "ENC-8001",
+   "patient_id": "SYN-P-0008",
+   "date": "2026-01-22",
+   "type": "Office visit",
+   "provider": "Dr. Synthetic Provider B",
+   "note_text": "Synthetic note. Bilateral knee pain for 2 years, worse on stairs. Pain 7/10. X-rays show bilateral medial joint-space narrowing. Plan: bilateral knee corticosteroid injections."
+  },
+  {
+   "encounter_id": "ENC-8002",
+   "patient_id": "SYN-P-0008",
+   "date": "2026-02-05",
+   "type": "Procedure visit",
+   "provider": "Dr. Synthetic Provider B",
+   "note_text": "Synthetic note. Bilateral knee corticosteroid injections. Indication: bilateral primary osteoarthritis with persistent pain. Pain 7/10 before injection. Tolerated well."
+  },
+  {
+   "encounter_id": "ENC-8003",
+   "patient_id": "SYN-P-0008",
+   "date": "2026-05-20",
+   "type": "Follow-up visit",
+   "provider": "Dr. Synthetic Provider B",
+   "note_text": "Synthetic note. Knee pain 4/10 since the injections. Walking 20 minutes a day. Continue home exercises."
+  },
+  {
+   "encounter_id": "ENC-9101",
+   "patient_id": "SYN-P-0009",
+   "date": "2026-05-11",
+   "type": "Office visit",
+   "provider": "Dr. Synthetic Provider A",
+   "note_text": "Synthetic note. New patient with low back pain for 6 months and low mood. Pain 5/10. PHQ-9 score 14. Plan: physical therapy referral and counselling referral."
+  },
+  {
+   "encounter_id": "ENC-9102",
+   "patient_id": "SYN-P-0009",
+   "date": "2026-07-07",
+   "type": "Follow-up visit",
+   "provider": "Dr. Synthetic Provider A",
+   "note_text": "Synthetic note. Back pain 3/10 since starting physical therapy. Mood improving, PHQ-9 score 9. Continue therapy."
+  },
+  {
+   "encounter_id": "ENC-1201",
+   "patient_id": "SYN-P-0010",
+   "date": "2026-06-18",
+   "type": "Office visit",
+   "provider": "Dr. Synthetic Provider D",
+   "note_text": "Synthetic note. New patient with mid-back muscle pain and tender trigger points. Pain 6/10. Plan: trigger point injections and a lumbar x-ray."
+  },
+  {
+   "encounter_id": "ENC-1202",
+   "patient_id": "SYN-P-0010",
+   "date": "2026-07-02",
+   "type": "Procedure visit",
+   "provider": "Dr. Synthetic Provider D",
+   "note_text": "Synthetic note. Trigger point injections in three muscles. Indication: myofascial pain with palpable trigger points. Tolerated well."
+  }
+ ],
+ "medications": [
+  {
+   "med_id": "MED-0001",
+   "patient_id": "SYN-P-0001",
+   "name": "Gabapentin",
+   "dose": "300 mg",
+   "frequency": "three times daily",
+   "start_date": "2025-11-03",
+   "status": "active"
+  },
+  {
+   "med_id": "MED-0002",
+   "patient_id": "SYN-P-0001",
+   "name": "Meloxicam",
+   "dose": "15 mg",
+   "frequency": "once daily",
+   "start_date": "2026-01-10",
+   "status": "active"
+  },
+  {
+   "med_id": "MED-0003",
+   "patient_id": "SYN-P-0001",
+   "name": "Cyclobenzaprine",
+   "dose": "5 mg",
+   "frequency": "at bedtime as needed",
+   "start_date": "2025-11-03",
+   "end_date": "2026-03-12",
+   "status": "stopped",
+   "encounter_id": "ENC-1001"
+  },
+  {
+   "med_id": "MED-0004",
+   "patient_id": "SYN-P-0002",
+   "name": "Naproxen",
+   "dose": "500 mg",
+   "frequency": "twice daily",
+   "start_date": "2026-02-10",
+   "status": "active",
+   "encounter_id": "ENC-2001"
+  },
+  {
+   "med_id": "MED-0005",
+   "patient_id": "SYN-P-0004",
+   "name": "Duloxetine",
+   "dose": "30 mg",
+   "frequency": "once daily",
+   "start_date": "2025-08-19",
+   "status": "active"
+  },
+  {
+   "med_id": "MED-0006",
+   "patient_id": "SYN-P-0005",
+   "name": "Diclofenac",
+   "dose": "75 mg",
+   "frequency": "twice daily",
+   "start_date": "2025-12-01",
+   "status": "active"
+  },
+  {
+   "med_id": "MED-0007",
+   "patient_id": "SYN-P-0006",
+   "name": "Gabapentin",
+   "dose": "300 mg",
+   "frequency": "at bedtime",
+   "start_date": "2026-02-17",
+   "status": "active",
+   "encounter_id": "ENC-6001"
+  },
+  {
+   "med_id": "MED-0008",
+   "patient_id": "SYN-P-0007",
+   "name": "Topiramate",
+   "dose": "50 mg",
+   "frequency": "twice daily",
+   "start_date": "2025-09-10",
+   "end_date": "2026-01-15",
+   "status": "stopped"
+  },
+  {
+   "med_id": "MED-0009",
+   "patient_id": "SYN-P-0007",
+   "name": "Propranolol",
+   "dose": "40 mg",
+   "frequency": "twice daily",
+   "start_date": "2026-01-20",
+   "end_date": "2026-04-01",
+   "status": "stopped"
+  },
+  {
+   "med_id": "MED-0010",
+   "patient_id": "SYN-P-0008",
+   "name": "Acetaminophen",
+   "dose": "1000 mg",
+   "frequency": "three times daily",
+   "start_date": "2025-06-01",
+   "status": "active"
+  },
+  {
+   "med_id": "MED-0011",
+   "patient_id": "SYN-P-0009",
+   "name": "Sertraline",
+   "dose": "50 mg",
+   "frequency": "once daily",
+   "start_date": "2026-05-11",
+   "status": "active",
+   "encounter_id": "ENC-9101"
+  }
+ ],
+ "allergies": [
+  {
+   "allergy_id": "ALG-0001",
+   "patient_id": "SYN-P-0001",
+   "substance": "Penicillin",
+   "reaction": "hives",
+   "severity": "moderate",
+   "recorded_on": "2019-06-01"
+  },
+  {
+   "allergy_id": "ALG-0002",
+   "patient_id": "SYN-P-0004",
+   "substance": "Sulfa drugs",
+   "reaction": "rash",
+   "severity": "mild",
+   "recorded_on": "2015-03-17"
+  },
+  {
+   "allergy_id": "ALG-0003",
+   "patient_id": "SYN-P-0005",
+   "substance": "Codeine",
+   "reaction": "nausea",
+   "severity": "moderate",
+   "recorded_on": "2012-04-02"
+  },
+  {
+   "allergy_id": "ALG-0004",
+   "patient_id": "SYN-P-0007",
+   "substance": "Latex",
+   "reaction": "contact dermatitis",
+   "severity": "mild",
+   "recorded_on": "2019-08-14"
+  },
+  {
+   "allergy_id": "ALG-0005",
+   "patient_id": "SYN-P-0008",
+   "substance": "Penicillin",
+   "reaction": "rash",
+   "severity": "mild",
+   "recorded_on": "2001-03-30"
+  },
+  {
+   "allergy_id": "ALG-0006",
+   "patient_id": "SYN-P-0010",
+   "substance": "No known drug allergies",
+   "reaction": "none",
+   "severity": "n/a",
+   "recorded_on": "2026-06-18"
+  }
+ ],
+ "problems": [
+  {
+   "problem_id": "PRB-0001",
+   "patient_id": "SYN-P-0001",
+   "description": "Chronic low back pain",
+   "icd10": "M54.50",
+   "status": "active",
+   "onset": "2024-03-01"
+  },
+  {
+   "problem_id": "PRB-0002",
+   "patient_id": "SYN-P-0001",
+   "description": "Lumbar radiculopathy",
+   "icd10": "M54.16",
+   "status": "active",
+   "onset": "2024-05-15"
+  },
+  {
+   "problem_id": "PRB-0003",
+   "patient_id": "SYN-P-0001",
+   "description": "Insomnia",
+   "icd10": "G47.00",
+   "status": "active",
+   "onset": "2025-02-01"
+  },
+  {
+   "problem_id": "PRB-0004",
+   "patient_id": "SYN-P-0002",
+   "description": "Primary osteoarthritis, right knee",
+   "icd10": "M17.11",
+   "status": "active",
+   "onset": "2025-10-01"
+  },
+  {
+   "problem_id": "PRB-0005",
+   "patient_id": "SYN-P-0004",
+   "description": "Cervicalgia",
+   "icd10": "M54.2",
+   "status": "active",
+   "onset": "2023-11-20"
+  },
+  {
+   "problem_id": "PRB-0006",
+   "patient_id": "SYN-P-0005",
+   "description": "Lumbar spondylosis",
+   "icd10": "M47.816",
+   "status": "active",
+   "onset": "2023-05-01"
+  },
+  {
+   "problem_id": "PRB-0007",
+   "patient_id": "SYN-P-0005",
+   "description": "Chronic low back pain",
+   "icd10": "M54.50",
+   "status": "active",
+   "onset": "2023-05-01"
+  },
+  {
+   "problem_id": "PRB-0008",
+   "patient_id": "SYN-P-0006",
+   "description": "Cervical radiculopathy",
+   "icd10": "M54.12",
+   "status": "active",
+   "onset": "2025-09-15"
+  },
+  {
+   "problem_id": "PRB-0009",
+   "patient_id": "SYN-P-0007",
+   "description": "Chronic migraine without aura",
+   "icd10": "G43.709",
+   "status": "active",
+   "onset": "2024-11-01"
+  },
+  {
+   "problem_id": "PRB-0010",
+   "patient_id": "SYN-P-0008",
+   "description": "Bilateral primary osteoarthritis of knee",
+   "icd10": "M17.0",
+   "status": "active",
+   "onset": "2024-02-01"
+  },
+  {
+   "problem_id": "PRB-0011",
+   "patient_id": "SYN-P-0009",
+   "description": "Low back pain",
+   "icd10": "M54.50",
+   "status": "active",
+   "onset": "2026-01-10"
+  },
+  {
+   "problem_id": "PRB-0012",
+   "patient_id": "SYN-P-0009",
+   "description": "Depression, unspecified",
+   "icd10": "F32.A",
+   "status": "active",
+   "onset": "2026-05-11"
+  },
+  {
+   "problem_id": "PRB-0013",
+   "patient_id": "SYN-P-0010",
+   "description": "Myalgia",
+   "icd10": "M79.10",
+   "status": "active",
+   "onset": "2026-06-18"
+  }
+ ],
+ "labs": [
+  {
+   "lab_id": "LAB-0001",
+   "patient_id": "SYN-P-0001",
+   "test": "Creatinine",
+   "value": "0.9",
+   "unit": "mg/dL",
+   "reference_range": "0.6-1.2",
+   "collected_on": "2026-03-12",
+   "encounter_id": "ENC-1001"
+  },
+  {
+   "lab_id": "LAB-0002",
+   "patient_id": "SYN-P-0001",
+   "test": "Hemoglobin A1c",
+   "value": "5.6",
+   "unit": "%",
+   "reference_range": "4.0-5.6",
+   "collected_on": "2026-03-12",
+   "encounter_id": "ENC-1001"
+  },
+  {
+   "lab_id": "LAB-0003",
+   "patient_id": "SYN-P-0004",
+   "test": "ALT",
+   "value": "22",
+   "unit": "U/L",
+   "reference_range": "7-56",
+   "collected_on": "2026-06-05",
+   "encounter_id": "ENC-4001"
+  }
+ ],
+ "observations": [
+  {
+   "obs_id": "OBS-0001",
+   "patient_id": "SYN-P-0001",
+   "dimension": "pain",
+   "instrument": "NRS 0-10",
+   "value": 7,
+   "unit": "/10",
+   "recorded_on": "2025-12-01"
+  },
+  {
+   "obs_id": "OBS-0002",
+   "patient_id": "SYN-P-0001",
+   "dimension": "pain",
+   "instrument": "NRS 0-10",
+   "value": 8,
+   "unit": "/10",
+   "recorded_on": "2026-03-12",
+   "encounter_id": "ENC-1001"
+  },
+  {
+   "obs_id": "OBS-0003",
+   "patient_id": "SYN-P-0001",
+   "dimension": "pain",
+   "instrument": "NRS 0-10",
+   "value": 5,
+   "unit": "/10",
+   "recorded_on": "2026-05-14",
+   "encounter_id": "ENC-1003"
+  },
+  {
+   "obs_id": "OBS-0004",
+   "patient_id": "SYN-P-0001",
+   "dimension": "function",
+   "instrument": "Oswestry Disability Index",
+   "value": 46,
+   "unit": "%",
+   "recorded_on": "2026-03-12",
+   "encounter_id": "ENC-1001"
+  },
+  {
+   "obs_id": "OBS-0005",
+   "patient_id": "SYN-P-0001",
+   "dimension": "function",
+   "instrument": "Oswestry Disability Index",
+   "value": 30,
+   "unit": "%",
+   "recorded_on": "2026-05-14",
+   "encounter_id": "ENC-1003"
+  },
+  {
+   "obs_id": "OBS-0006",
+   "patient_id": "SYN-P-0001",
+   "dimension": "sleep",
+   "instrument": "Self-reported hours per night",
+   "value": 4,
+   "unit": "hours",
+   "recorded_on": "2026-03-12",
+   "encounter_id": "ENC-1001"
+  },
+  {
+   "obs_id": "OBS-0007",
+   "patient_id": "SYN-P-0001",
+   "dimension": "sleep",
+   "instrument": "Self-reported hours per night",
+   "value": 6,
+   "unit": "hours",
+   "recorded_on": "2026-05-14",
+   "encounter_id": "ENC-1003"
+  },
+  {
+   "obs_id": "OBS-0008",
+   "patient_id": "SYN-P-0001",
+   "dimension": "mood",
+   "instrument": "PHQ-9",
+   "value": 11,
+   "unit": "points",
+   "recorded_on": "2026-03-12",
+   "encounter_id": "ENC-1001"
+  },
+  {
+   "obs_id": "OBS-0009",
+   "patient_id": "SYN-P-0001",
+   "dimension": "mood",
+   "instrument": "PHQ-9",
+   "value": 7,
+   "unit": "points",
+   "recorded_on": "2026-05-14",
+   "encounter_id": "ENC-1003"
+  },
+  {
+   "obs_id": "OBS-0010",
+   "patient_id": "SYN-P-0002",
+   "dimension": "pain",
+   "instrument": "NRS 0-10",
+   "value": 6,
+   "unit": "/10",
+   "recorded_on": "2026-02-10",
+   "encounter_id": "ENC-2001"
+  },
+  {
+   "obs_id": "OBS-0011",
+   "patient_id": "SYN-P-0004",
+   "dimension": "pain",
+   "instrument": "NRS 0-10",
+   "value": 6,
+   "unit": "/10",
+   "recorded_on": "2026-06-05",
+   "encounter_id": "ENC-4001"
+  },
+  {
+   "obs_id": "OBS-0012",
+   "patient_id": "SYN-P-0005",
+   "dimension": "pain",
+   "instrument": "NRS 0-10",
+   "value": 7,
+   "unit": "/10",
+   "recorded_on": "2026-03-03",
+   "encounter_id": "ENC-5001"
+  },
+  {
+   "obs_id": "OBS-0013",
+   "patient_id": "SYN-P-0005",
+   "dimension": "function",
+   "instrument": "Oswestry Disability Index",
+   "value": 40,
+   "unit": "%",
+   "recorded_on": "2026-03-03",
+   "encounter_id": "ENC-5001"
+  },
+  {
+   "obs_id": "OBS-0014",
+   "patient_id": "SYN-P-0005",
+   "dimension": "pain",
+   "instrument": "NRS 0-10",
+   "value": 7,
+   "unit": "/10",
+   "recorded_on": "2026-04-14",
+   "encounter_id": "ENC-5002"
+  },
+  {
+   "obs_id": "OBS-0015",
+   "patient_id": "SYN-P-0005",
+   "dimension": "pain",
+   "instrument": "NRS 0-10",
+   "value": 6,
+   "unit": "/10",
+   "recorded_on": "2026-06-02",
+   "encounter_id": "ENC-5003"
+  },
+  {
+   "obs_id": "OBS-0016",
+   "patient_id": "SYN-P-0006",
+   "dimension": "pain",
+   "instrument": "NRS 0-10",
+   "value": 6,
+   "unit": "/10",
+   "recorded_on": "2026-02-17",
+   "encounter_id": "ENC-6001"
+  },
+  {
+   "obs_id": "OBS-0017",
+   "patient_id": "SYN-P-0008",
+   "dimension": "pain",
+   "instrument": "NRS 0-10",
+   "value": 7,
+   "unit": "/10",
+   "recorded_on": "2026-01-22",
+   "encounter_id": "ENC-8001"
+  },
+  {
+   "obs_id": "OBS-0018",
+   "patient_id": "SYN-P-0008",
+   "dimension": "pain",
+   "instrument": "NRS 0-10",
+   "value": 7,
+   "unit": "/10",
+   "recorded_on": "2026-02-05",
+   "encounter_id": "ENC-8002"
+  },
+  {
+   "obs_id": "OBS-0019",
+   "patient_id": "SYN-P-0008",
+   "dimension": "pain",
+   "instrument": "NRS 0-10",
+   "value": 4,
+   "unit": "/10",
+   "recorded_on": "2026-05-20",
+   "encounter_id": "ENC-8003"
+  },
+  {
+   "obs_id": "OBS-0020",
+   "patient_id": "SYN-P-0009",
+   "dimension": "pain",
+   "instrument": "NRS 0-10",
+   "value": 5,
+   "unit": "/10",
+   "recorded_on": "2026-05-11",
+   "encounter_id": "ENC-9101"
+  },
+  {
+   "obs_id": "OBS-0021",
+   "patient_id": "SYN-P-0009",
+   "dimension": "mood",
+   "instrument": "PHQ-9",
+   "value": 14,
+   "unit": "points",
+   "recorded_on": "2026-05-11",
+   "encounter_id": "ENC-9101"
+  },
+  {
+   "obs_id": "OBS-0022",
+   "patient_id": "SYN-P-0009",
+   "dimension": "pain",
+   "instrument": "NRS 0-10",
+   "value": 3,
+   "unit": "/10",
+   "recorded_on": "2026-07-07",
+   "encounter_id": "ENC-9102"
+  },
+  {
+   "obs_id": "OBS-0023",
+   "patient_id": "SYN-P-0009",
+   "dimension": "mood",
+   "instrument": "PHQ-9",
+   "value": 9,
+   "unit": "points",
+   "recorded_on": "2026-07-07",
+   "encounter_id": "ENC-9102"
+  },
+  {
+   "obs_id": "OBS-0024",
+   "patient_id": "SYN-P-0010",
+   "dimension": "pain",
+   "instrument": "NRS 0-10",
+   "value": 6,
+   "unit": "/10",
+   "recorded_on": "2026-06-18",
+   "encounter_id": "ENC-1201"
+  }
+ ],
+ "procedures": [
+  {
+   "procedure_id": "PRC-0001",
+   "patient_id": "SYN-P-0001",
+   "name": "Physical therapy, 6-week course",
+   "cpt": "97110",
+   "performed_on": "2026-01-15",
+   "outcome_note": "Completed 6 weeks; minimal improvement in pain."
+  },
+  {
+   "procedure_id": "PRC-0002",
+   "patient_id": "SYN-P-0001",
+   "name": "Lumbar epidural steroid injection, L4-L5",
+   "cpt": "62323",
+   "performed_on": "2026-04-02",
+   "encounter_id": "ENC-1002",
+   "outcome_note": "No complications."
+  },
+  {
+   "procedure_id": "PRC-0003",
+   "patient_id": "SYN-P-0002",
+   "name": "Right knee corticosteroid injection",
+   "cpt": "20610",
+   "performed_on": "2026-02-24",
+   "encounter_id": "ENC-2002",
+   "outcome_note": "Tolerated well."
+  },
+  {
+   "procedure_id": "PRC-0004",
+   "patient_id": "SYN-P-0005",
+   "name": "Physical therapy, 8-week course",
+   "cpt": "97110",
+   "performed_on": "2026-01-20",
+   "outcome_note": "No lasting relief."
+  },
+  {
+   "procedure_id": "PRC-0005",
+   "patient_id": "SYN-P-0005",
+   "name": "Lumbar medial branch blocks, L4-S1",
+   "cpt": "64493",
+   "performed_on": "2026-04-14",
+   "encounter_id": "ENC-5002",
+   "outcome_note": "More than 80% relief for 6 hours."
+  },
+  {
+   "procedure_id": "PRC-0006",
+   "patient_id": "SYN-P-0005",
+   "name": "Radiofrequency ablation, lumbar medial branches",
+   "cpt": "64635",
+   "performed_on": "2026-06-02",
+   "encounter_id": "ENC-5003",
+   "outcome_note": "No complications."
+  },
+  {
+   "procedure_id": "PRC-0007",
+   "patient_id": "SYN-P-0006",
+   "name": "Cervical epidural steroid injection, C6-C7",
+   "cpt": "62321",
+   "performed_on": "2026-03-24",
+   "encounter_id": "ENC-6002",
+   "outcome_note": "Tolerated well."
+  },
+  {
+   "procedure_id": "PRC-0008",
+   "patient_id": "SYN-P-0007",
+   "name": "Greater occipital nerve block, bilateral",
+   "cpt": "64405",
+   "performed_on": "2026-05-06",
+   "encounter_id": "ENC-7002",
+   "outcome_note": "Tolerated well."
+  },
+  {
+   "procedure_id": "PRC-0009",
+   "patient_id": "SYN-P-0007",
+   "name": "Chemodenervation for chronic migraine",
+   "cpt": "64615",
+   "performed_on": "2026-07-15",
+   "encounter_id": "ENC-7003",
+   "outcome_note": "No complications."
+  },
+  {
+   "procedure_id": "PRC-0010",
+   "patient_id": "SYN-P-0008",
+   "name": "Bilateral knee corticosteroid injections",
+   "cpt": "20610",
+   "performed_on": "2026-02-05",
+   "encounter_id": "ENC-8002",
+   "outcome_note": "Tolerated well."
+  },
+  {
+   "procedure_id": "PRC-0011",
+   "patient_id": "SYN-P-0010",
+   "name": "Trigger point injections, 3 or more muscles",
+   "cpt": "20553",
+   "performed_on": "2026-07-02",
+   "encounter_id": "ENC-1202",
+   "outcome_note": "Tolerated well."
+  }
+ ],
+ "documents": [
+  {
+   "document_id": "DOC-2001",
+   "patient_id": "SYN-P-0001",
+   "title": "MRI lumbar spine report",
+   "doc_type": "imaging_report",
+   "document_date": "2026-02-20",
+   "embedded_identifiers": {
+    "mrn": "SYN100001",
+    "dob": "1971-04-12",
+    "last_name": "Testpatient",
+    "first_name": "Avery"
+   },
+   "pages": [
+    {
+     "page": 1,
+     "text": "SYNTHETIC REPORT. Patient: Avery Testpatient. MRN SYN100001. MRI lumbar spine without contrast. Indication: low back pain with left leg radiation."
+    },
+    {
+     "page": 2,
+     "text": "Findings: L4-L5 disc protrusion with left foraminal narrowing contacting the L5 nerve root. Impression: L4-L5 disc protrusion, correlate for left L5 radiculopathy."
+    }
+   ]
+  },
+  {
+   "document_id": "DOC-2002",
+   "patient_id": "SYN-P-0001",
+   "title": "Physical therapy discharge summary",
+   "doc_type": "therapy_summary",
+   "document_date": "2026-03-01",
+   "embedded_identifiers": {
+    "mrn": "SYN100001",
+    "dob": "1971-04-12",
+    "last_name": "Testpatient"
+   },
+   "pages": [
+    {
+     "page": 1,
+     "text": "SYNTHETIC SUMMARY. 12 sessions over 6 weeks. Pain unchanged at discharge. Recommend specialist follow-up."
+    }
+   ]
+  },
+  {
+   "document_id": "DOC-4001",
+   "patient_id": "SYN-P-0004",
+   "title": "Outside records: cervical MRI",
+   "doc_type": "imaging_report",
+   "document_date": "2026-05-28",
+   "embedded_identifiers": {
+    "mrn": "SYN100099",
+    "dob": "1962-07-04",
+    "last_name": "Otherperson"
+   },
+   "pages": [
+    {
+     "page": 1,
+     "text": "SYNTHETIC OUTSIDE REPORT. Patient: Casey Otherperson. MRN SYN100099. Cervical MRI: C5-C6 disc degeneration."
+    }
+   ]
+  },
+  {
+   "document_id": "DOC-4002",
+   "patient_id": "SYN-P-0004",
+   "title": "Pain clinic intake form",
+   "doc_type": "intake_form",
+   "document_date": "2025-08-19",
+   "embedded_identifiers": {
+    "mrn": "SYN100004",
+    "dob": "1959-01-22",
+    "last_name": "Democase"
+   },
+   "pages": [
+    {
+     "page": 1,
+     "text": "SYNTHETIC FORM. Neck pain for 3 years. Prior treatment: physical therapy, NSAIDs."
+    }
+   ]
+  },
+  {
+   "document_id": "DOC-5001",
+   "patient_id": "SYN-P-0005",
+   "title": "MRI lumbar spine report",
+   "doc_type": "imaging_report",
+   "document_date": "2026-02-10",
+   "embedded_identifiers": {
+    "mrn": "SYN100005",
+    "dob": "1966-07-18",
+    "last_name": "Exampleton",
+    "first_name": "Morgan"
+   },
+   "pages": [
+    {
+     "page": 1,
+     "text": "SYNTHETIC REPORT. Patient: Morgan Exampleton. MRN SYN100005. MRI lumbar spine without contrast. Indication: chronic axial low back pain."
+    },
+    {
+     "page": 2,
+     "text": "Findings: moderate facet arthropathy at L4-L5 and L5-S1 with no significant canal stenosis. Impression: lumbar facet arthropathy L4-S1."
+    }
+   ]
+  },
+  {
+   "document_id": "DOC-8001",
+   "patient_id": "SYN-P-0008",
+   "title": "X-ray bilateral knees report",
+   "doc_type": "imaging_report",
+   "document_date": "2026-01-22",
+   "embedded_identifiers": {
+    "mrn": "SYN100010",
+    "dob": "1955-12-09",
+    "last_name": "Placeholder"
+   },
+   "pages": [
+    {
+     "page": 1,
+     "text": "SYNTHETIC REPORT. Patient: Taylor Placeholder. Standing views of both knees. Medial joint-space narrowing and osteophytes bilaterally. Impression: bilateral knee osteoarthritis."
+    }
+   ]
+  }
+ ]
 }

@@ -1,10 +1,23 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { api } from "../api";
+import { api, type CaseSummary } from "../api";
 import { ActionError, LoadState, Notice, Pill } from "../components/ui";
 import { useAction, useLoad } from "../hooks";
 import { CATEGORY_LABELS, FLAG_LABELS, money, STATE_LABELS, stateTone } from "../labels";
 import { useSession } from "../session";
+
+const VIEWS: { key: string; label: string; match: (c: CaseSummary) => boolean }[] = [
+  { key: "person", label: "Needs a person", match: (c) => stateTone(c.state) === "human" },
+  { key: "escalated", label: "Escalated", match: (c) => c.state === "ESCALATED" },
+  { key: "owner", label: "With owner", match: (c) => c.state === "ROUTED" || c.state === "SUBMITTED_BY_STAFF" },
+  { key: "done", label: "Done", match: (c) => c.state === "COMPLETED" || c.state === "NO_ACTION" },
+  { key: "all", label: "All", match: () => true },
+];
+const SORTS: Record<string, { label: string; fn: (a: CaseSummary, b: CaseSummary) => number }> = {
+  claim: { label: "Claim number", fn: (a, b) => a.claim_id.localeCompare(b.claim_id) },
+  amount: { label: "Billed, highest first", fn: (a, b) => b.billed_amount - a.billed_amount },
+  oldest: { label: "Service date, oldest first", fn: (a, b) => a.date_of_service.localeCompare(b.date_of_service) },
+};
 
 export default function BillingPage() {
   const navigate = useNavigate();
@@ -18,6 +31,23 @@ export default function BillingPage() {
   const sync = useAction();
   const [syncNote, setSyncNote] = useState<string | null>(null);
   const canWork = user.role === "biller" || user.role === "billing_approver";
+  const [view, setView] = useState("person");
+  const [search, setSearch] = useState("");
+  const [category, setCategory] = useState("");
+  const [sort, setSort] = useState("claim");
+  const all = cases.data ?? [];
+  const counts = useMemo(() => Object.fromEntries(VIEWS.map((v) => [v.key, all.filter(v.match).length])), [all]);
+  const shown = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    const match = VIEWS.find((v) => v.key === view)!.match;
+    return all
+      .filter(match)
+      .filter((c) => !category || c.category === category)
+      .filter((c) => !q || `${c.claim_id} ${c.payer} ${c.denial_code ?? ""} ${c.owner ?? ""}`.toLowerCase().includes(q))
+      .sort(SORTS[sort].fn);
+  }, [all, view, search, category, sort]);
+  const categories = useMemo(() => Array.from(new Set(all.map((c) => c.category).filter(Boolean))) as string[], [all]);
+  const totalAtStake = shown.reduce((sum, c) => sum + c.billed_amount, 0);
 
   const pull = () =>
     sync.run(async () => {
@@ -56,13 +86,36 @@ export default function BillingPage() {
       {cases.data && cases.data.length === 0 && (
         <p className="empty">No cases yet. {canWork ? "Read the work queue to start." : "Ask billing staff to read the work queue."}</p>
       )}
-      {cases.data && cases.data.length > 0 && (
+      {all.length > 0 && (
+        <>
+          <div className="views" role="tablist" aria-label="Filter cases">
+            {VIEWS.map((v) => (
+              <button key={v.key} role="tab" aria-selected={view === v.key} className={`view-chip${view === v.key ? " active" : ""}`} onClick={() => setView(v.key)}>
+                {v.label} <span className="count">{counts[v.key]}</span>
+              </button>
+            ))}
+          </div>
+          <div className="toolbar">
+            <input type="search" aria-label="Search cases" placeholder="Search claim, payer, code or owner" value={search} onChange={(e) => setSearch(e.target.value)} />
+            <label>Category <select value={category} onChange={(e) => setCategory(e.target.value)}>
+              <option value="">All</option>
+              {categories.sort().map((c) => <option key={c} value={c}>{CATEGORY_LABELS[c] ?? c}</option>)}
+            </select></label>
+            <label>Sort <select value={sort} onChange={(e) => setSort(e.target.value)}>
+              {Object.entries(SORTS).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
+            </select></label>
+            <span className="fine">Showing {shown.length} of {all.length} · {money(totalAtStake)} billed</span>
+          </div>
+        </>
+      )}
+      {all.length > 0 && shown.length === 0 && <p className="empty">No cases match these filters.</p>}
+      {shown.length > 0 && (
         <table className="table clickable">
           <thead>
             <tr><th>Claim</th><th>Payer</th><th>Service date</th><th className="num">Billed</th><th>Category</th><th>Status</th><th>Owner</th></tr>
           </thead>
           <tbody>
-            {cases.data.map((c) => (
+            {shown.map((c) => (
               <tr key={c.id} onClick={() => navigate(`/billing/cases/${c.id}`)} tabIndex={0}
                   onKeyDown={(e) => e.key === "Enter" && navigate(`/billing/cases/${c.id}`)}>
                 <td><strong>{c.claim_id}</strong>{c.denial_code && <span className="fine"> code {c.denial_code}</span>}</td>

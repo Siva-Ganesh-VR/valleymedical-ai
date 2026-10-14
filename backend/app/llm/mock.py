@@ -83,6 +83,16 @@ class MockLLMClient(LLMClient):
             return {"category": category, "confidence": 0.9,
                     "rationale": f"Denial reason code {ctx.get('carc_code')} indicates {category.replace('_', ' ').lower()}.",
                     "recommended_next_action": "Gather supporting records and prepare the appropriate response."}
+        # No known code: fall back to keywords in the denial text, with lower confidence, as a model would.
+        text = str(ctx.get("description") or "").lower()
+        for words, cat in ((("attachment", "documentation", "lacks information"), "MISSING_DOCUMENTATION"),
+                           (("authoriz", "precert"), "MISSING_PRIOR_AUTH"), (("coverage", "eligib", "insured"), "ELIGIBILITY"),
+                           (("duplicate",), "DUPLICATE"), (("diagnosis", "modifier", "procedure code"), "CODING_ERROR"),
+                           (("medical necessity", "necessary"), "MEDICAL_NECESSITY"), (("time limit", "filing"), "TIMELY_FILING")):
+            if any(w in text for w in words):
+                return {"category": cat, "confidence": 0.75,
+                        "rationale": f"Denial code {ctx.get('carc_code')} is not in the rule table; the denial text points to {cat.replace('_', ' ').lower()}.",
+                        "recommended_next_action": "Confirm the category against the remittance before acting."}
         return {"category": "OTHER", "confidence": 0.5, "rationale": "Denial reason is unclear from the claim data.",
                 "recommended_next_action": "Review the remittance details manually."}
 

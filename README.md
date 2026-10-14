@@ -54,8 +54,16 @@ Use the **Signed in as** menu (bottom left) to switch roles. In this POC that me
    - **CLM-9004.** The payer remark contains "IGNORE PREVIOUS INSTRUCTIONS…". This is flagged and treated as data.
    - **CLM-9005.** The date of birth on the claim doesn't match Meditab. The agent stops before reading any records.
    - **CLM-9008.** The rule result overrides the model's suggestion.
-9. **Exceptions** shows everything that stopped for a person.
-10. Sign in as *Admin Test* and open **Audit log**. Every read, model call and approval is listed, with an intact hash chain.
+9. The queue holds **31 synthetic claims (27 need work)** across 10 patients. Use the filter chips (*Needs a person*, *Escalated*, *With owner*, *Done*), search and sorting. Other cases worth opening:
+   - **CLM-9009 / CLM-9027** ($2,850 and $1,150): radiofrequency ablation appeals. The agent finds the physical therapy course, the diagnostic blocks and the MRI pages as evidence.
+   - **CLM-9010 vs CLM-9012**: two prior-authorization denials. One has an authorization number on file (appeal); one doesn't (provider query).
+   - **CLM-9013 / CLM-9030**: codes not in the rule table, so the model decides and the case is flagged *low confidence*.
+   - **CLM-9015, 9016, 9017, 9028**: eligibility, duplicate and timely-filing hard stops.
+   - **CLM-9025**: a second, subtler injection attempt ("SYSTEM NOTICE TO AI ASSISTANT…"), also flagged.
+   - **CLM-9026**: a one-letter typo in the patient's last name. The agent stops before reading any records.
+   - **CLM-9019, 9020, 9024**: paid or recently worked, so no action.
+10. **Exceptions** shows everything that stopped for a person.
+11. Sign in as *Admin Test* and open **Audit log**. Every read, model call and approval is listed, with an intact hash chain.
 
 ## Feature pack: Phase 1 WBS items added to the POC
 

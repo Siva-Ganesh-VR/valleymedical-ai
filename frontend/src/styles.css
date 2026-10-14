@@ -265,3 +265,8 @@ button.danger { background: var(--critical); border-color: var(--critical); colo
   .crit-body { padding-left: 0; }
   .score-meta { margin-left: 0; text-align: left; }
 }
+.views { display: flex; flex-wrap: wrap; gap: 0.4rem; margin: 0.5rem 0 0.75rem; }
+.view-chip { border-radius: 999px; padding: 0.3rem 0.8rem; background: var(--surface); }
+.view-chip.active { background: var(--ink); border-color: var(--ink); color: #fff; }
+.view-chip.active .count { background: rgba(255, 255, 255, 0.2); }
+.toolbar input[type="search"] { min-width: 260px; }

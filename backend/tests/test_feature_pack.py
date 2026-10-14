@@ -50,7 +50,7 @@ def test_monthly_budget_blocks_calls():
                                  llm_monthly_token_budget=1000), llm=Costly())
     client = TestClient(create_app(c))
     cases = sync(client)
-    states = sorted(x["state"] for x in cases.values() if x["claim_id"] != "CLM-9007")
+    states = sorted(x["state"] for x in cases.values() if x["claim_id"] not in {"CLM-9007", "CLM-9019", "CLM-9020", "CLM-9024"})
     assert "ESCALATED" in states and "AWAITING_CLASSIFICATION_REVIEW" in states
 
 
