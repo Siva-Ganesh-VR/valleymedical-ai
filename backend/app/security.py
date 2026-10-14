@@ -35,6 +35,14 @@ class Permission(str, Enum):
     EXCEPTIONS_READ = "exceptions:read"
     EXCEPTIONS_RESOLVE = "exceptions:resolve"
     AUDIT_READ = "audit:read"
+    DOC_AUDIT_RUN = "doc_audit:run"
+    DOC_AUDIT_REVIEW = "doc_audit:review"
+    BILLING_INSIGHTS = "billing:insights"
+    BASELINE_EDIT = "billing:baseline_edit"
+    ACCEPTANCE_READ = "acceptance:read"
+    ACCEPTANCE_RUN = "acceptance:run"
+    AI_USAGE_READ = "ai:usage_read"
+    AI_CONTROL = "ai:control"
 
 
 _GRANTS: dict[Permission, frozenset[Role]] = {
@@ -48,6 +56,14 @@ _GRANTS: dict[Permission, frozenset[Role]] = {
     ),
     Permission.EXCEPTIONS_RESOLVE: frozenset({Role.PROVIDER, Role.BILLING_APPROVER, Role.ADMIN}),
     Permission.AUDIT_READ: frozenset({Role.ADMIN}),
+    Permission.DOC_AUDIT_RUN: frozenset({Role.PROVIDER, Role.ADMIN}),
+    Permission.DOC_AUDIT_REVIEW: frozenset({Role.PROVIDER}),
+    Permission.BILLING_INSIGHTS: frozenset({Role.BILLER, Role.BILLING_APPROVER, Role.ADMIN}),
+    Permission.BASELINE_EDIT: frozenset({Role.BILLING_APPROVER, Role.ADMIN}),
+    Permission.ACCEPTANCE_READ: frozenset({Role.PROVIDER, Role.BILLER, Role.BILLING_APPROVER, Role.ADMIN}),
+    Permission.ACCEPTANCE_RUN: frozenset({Role.ADMIN}),
+    Permission.AI_USAGE_READ: frozenset({Role.ADMIN, Role.BILLING_APPROVER}),
+    Permission.AI_CONTROL: frozenset({Role.ADMIN}),
 }
 
 

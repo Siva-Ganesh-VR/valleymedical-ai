@@ -119,6 +119,7 @@ export interface SummaryResult {
   prompt_version: string;
   generated_at: string;
   message: string | null;
+  reused: boolean;
 }
 
 export interface TrendPoint {
@@ -251,7 +252,8 @@ export const api = {
   patients: (q: string) => request<Patient[]>("GET", `/patients?q=${enc(q)}`),
   record: (id: string) => request<ClinicalRecord>("GET", `/patients/${enc(id)}/record`),
   chronicPain: (id: string) => request<ChronicPainView>("GET", `/patients/${enc(id)}/chronic-pain`),
-  summary: (id: string) => request<SummaryResult>("POST", `/patients/${enc(id)}/previsit-summary`),
+  summary: (id: string, force = false) =>
+    request<SummaryResult>("POST", `/patients/${enc(id)}/previsit-summary${force ? "?force=true" : ""}`),
 
   queues: () => request<string[]>("GET", "/billing/queues"),
   sync: (queue: string) =>
@@ -259,11 +261,11 @@ export const api = {
   cases: (queue?: string) => request<CaseSummary[]>("GET", `/billing/cases${queue ? `?queue=${enc(queue)}` : ""}`),
   case: (id: string) => request<CaseDetail>("GET", `/billing/cases/${enc(id)}`),
   advance: (id: string) => request<CaseDetail>("POST", `/billing/cases/${enc(id)}/advance`),
-  reviewClassification: (id: string, body: { decision: "confirm" | "change"; category?: string; note?: string }) =>
+  reviewClassification: (id: string, body: { decision: "confirm" | "change"; category?: string; note?: string; handling_seconds?: number }) =>
     request<CaseDetail>("POST", `/billing/cases/${enc(id)}/classification-review`, body),
-  reviewDraft: (id: string, body: { decision: "approve" | "reject"; edited_text?: string; note?: string }) =>
+  reviewDraft: (id: string, body: { decision: "approve" | "reject"; edited_text?: string; note?: string; handling_seconds?: number; edit_level?: "none" | "minor" | "major" }) =>
     request<CaseDetail>("POST", `/billing/cases/${enc(id)}/draft-review`, body),
-  tracking: (id: string, body: { status: "submitted_by_staff" | "resolved"; reference?: string; note?: string }) =>
+  tracking: (id: string, body: { status: "submitted_by_staff" | "resolved"; reference?: string; note?: string; handling_seconds?: number }) =>
     request<CaseDetail>("POST", `/billing/cases/${enc(id)}/tracking`, body),
 
   exceptions: (status?: string) => request<ExceptionRow[]>("GET", `/exceptions${status ? `?status=${enc(status)}` : ""}`),
@@ -271,3 +273,137 @@ export const api = {
   audit: () => request<AuditRow[]>("GET", "/audit?limit=300"),
   verifyAudit: () => request<{ ok: boolean; checked: number; first_invalid_id: number | null }>("GET", "/audit/verify"),
 };
+
+// ------------------------------------------------------------------ feature pack types
+export interface AuditEvidence {
+  item_id: string;
+  display: string;
+  source: SourceRef;
+}
+
+export interface DocAuditView {
+  run_id: number;
+  patient_id: string;
+  created_at: string;
+  actor: string;
+  ruleset_version: string;
+  model: string | null;
+  prompt_version: string | null;
+  checks_total: number;
+  checks_passed: number;
+  score: number | null;
+  rules: { rule_id: string; title: string; description: string; method: "rule" | "ai"; severity: string }[];
+  passed: { rule_id: string; target: string; note: string; evidence: AuditEvidence[] }[];
+  not_checked: string[];
+  findings: {
+    id: number;
+    rule_id: string;
+    rule_title: string;
+    target: string;
+    severity: string;
+    method: "rule" | "ai";
+    message: string;
+    evidence: AuditEvidence[];
+    status: "open" | "confirmed" | "dismissed";
+    reviewed_by: string | null;
+    review_note: string | null;
+  }[];
+}
+
+export interface Baseline {
+  category: string;
+  minutes_per_case: number;
+  sample_size: number;
+  source: string;
+  synthetic: boolean;
+  created_by: string;
+  created_at: string;
+}
+
+export interface BillingInsights {
+  generated_at: string;
+  thresholds: Record<string, number>;
+  volume: { cases: number; worked: number; by_state: Record<string, number>; waiting_for_person: number; escalated: number; completed: number; by_category: Record<string, number> };
+  classification: { reviewed: number; proposal_agreed: number; proposal_accuracy: number | null; model_agreed: number; model_accuracy: number | null };
+  supporting_records: { cases: number; complete: number; rate: number | null };
+  drafts: { rated: number; usable: number; usable_rate: number | null; ratings: Record<string, number> };
+  handling_time: {
+    by_category: { category: string; cases: number; avg_minutes_with_agent: number | null; baseline_minutes: number | null; baseline_sample: number | null; baseline_synthetic: boolean | null; reduction: number | null }[];
+    overall_reduction: number | null;
+    baseline_captured: boolean;
+    baseline_synthetic: boolean;
+  };
+  money: { at_risk_open: number; open_cases: number; appeals_with_owner: number; appeal_cases: number; worked_to_completion: number; completed_cases: number };
+  escalations: Record<string, number>;
+  baselines: Baseline[];
+}
+
+export type CriterionStatus = "pass" | "fail" | "measured" | "pending" | "not_testable";
+
+export interface AcceptanceResult {
+  id: string;
+  proof: string;
+  area: string;
+  requirement: string;
+  threshold: string;
+  hard_gate: boolean;
+  status: CriterionStatus;
+  value: string;
+  n: number | null;
+  evidence: string[];
+  failures: string[];
+}
+
+export interface AcceptanceRunView {
+  id: number;
+  created_at: string;
+  actor: string;
+  model: string;
+  testset_version: string;
+  hard_gates_passed: boolean;
+  summary: {
+    pass: number; fail: number; measured: number; pending: number; not_testable: number;
+    hard_gate_failures: string[]; hard_gates_pending: string[];
+    model_calls: number; tokens: number; seconds: number; mock_model: boolean;
+  };
+  results: AcceptanceResult[];
+}
+
+export interface AiUsage {
+  provider: string;
+  model: string;
+  month: string;
+  tokens_this_month: number;
+  monthly_budget: number | null;
+  budget_used: number | null;
+  prices_configured: boolean;
+  pause: { paused: boolean; reason?: string | null; updated_by?: string; updated_at?: string };
+  by_task: { task: string; calls: number; errors: number; blocked: number; reused: number; input_tokens: number; output_tokens: number; avg_latency_ms: number | null; est_cost_usd: number | null }[];
+  by_day: { day: string; tokens: number; calls: number }[];
+  recent: { ts: string; task: string; status: string; model: string | null; prompt_version: string | null; tokens: number; latency_ms: number; note: string | null }[];
+}
+
+export const features = {
+  runDocAudit: (pid: string) => request<DocAuditView>("POST", `/patients/${enc(pid)}/documentation-audit`),
+  latestDocAudit: (pid: string) => request<DocAuditView | null>("GET", `/patients/${enc(pid)}/documentation-audit`),
+  reviewFinding: (id: number, decision: "confirmed" | "dismissed", note?: string) =>
+    request<DocAuditView>("POST", `/documentation-audit/findings/${id}/review`, { decision, note }),
+
+  insights: () => request<BillingInsights>("GET", "/billing/insights"),
+  addBaseline: (b: { category: string; minutes_per_case: number; sample_size: number; source: string }) =>
+    request<{ category: string }>("POST", "/billing/baselines", b),
+  demoBaselines: () => request<{ loaded: number }>("POST", "/billing/baselines/demo"),
+  insightsCsv: () => requestText("/billing/insights.csv"),
+
+  acceptanceRuns: () => request<AcceptanceRunView[]>("GET", "/acceptance/runs"),
+  runAcceptance: () => request<AcceptanceRunView>("POST", "/acceptance/run"),
+
+  aiUsage: () => request<AiUsage>("GET", "/ai/usage"),
+  setPaused: (paused: boolean, reason?: string) => request<AiUsage["pause"]>("POST", "/ai/pause", { paused, reason }),
+};
+
+async function requestText(path: string): Promise<string> {
+  const res = await fetch(`/api${path}`, { headers: { "X-Demo-User": currentUser.username, "X-Demo-Role": currentUser.role } });
+  if (!res.ok) throw new ApiError(res.status, "error", `Download failed (${res.status})`);
+  return res.text();
+}

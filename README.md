@@ -57,6 +57,25 @@ Use the **Signed in as** menu (bottom left) to switch roles. In this POC that me
 9. **Exceptions** shows everything that stopped for a person.
 10. Sign in as *Admin Test* and open **Audit log**. Every read, model call and approval is listed, with an intact hash chain.
 
+## Feature pack: Phase 1 WBS items added to the POC
+
+| Feature | WBS item | Where to see it |
+| --- | --- | --- |
+| **Documentation audit (AI-23)**: seven rules, deterministic first; AI checks must quote the note verbatim or become a finding; clinicians confirm or dismiss each finding | #10 | Patient → *Documentation audit* tab |
+| **Billing insights (AI-18)**: classification accuracy vs reviewers, supporting-record completeness, draft usability ratings, active handling time vs a time-study baseline, money at stake, CSV export | #14, N6 | *Billing insights* |
+| **Acceptance scorecard**: runs the real pipelines in an isolated sandbox against a labelled test set, injects failures, and scores all 15 acceptance criteria from the feasibility document, with hard gates and sample sizes | #18 | *Acceptance scorecard* (admin runs it) |
+| **AI gateway**: every model call metered (tokens, latency, model, prompt version), monthly token budget, admin kill switch, summary reuse when the chart hasn't changed | N3, N9, N10 | *AI usage* |
+
+Also included: handling time is measured on every human decision (the timer runs only while the case is on screen and in focus), and approvers rate each edited draft as minor or major to measure "usable with minor or no revision".
+
+### Feature pack demo (about 8 minutes)
+
+1. As *Dr. Test*: open **Samplecase, Jordan (SYN100002) → Documentation audit → Run documentation audit**. Five findings, each linked to its Meditab record. Confirm one; dismiss one with a reason.
+2. Same patient, **Pre-visit summary**: write it twice. The second time it is reused ("nothing in the chart has changed"), with no AI call.
+3. As *Biller Test*, then *Approver Test*: work CLM-9001 through to approval (rate the draft if you edit it). As *Approver Test*, open **Billing insights → Load synthetic demo baseline**. Accuracy, usability, handling time and money now populate. The synthetic baseline is labelled as such.
+4. As *Admin Test*: **Acceptance scorecard → Run acceptance tests**. Open any criterion to see its evidence. With a live model, the accuracy figures are real measurements.
+5. As *Admin Test*: **AI usage → Pause all AI**. Read the work queue or write a summary: work falls back to the exception queue safely. Resume.
+
 ## How this maps to the feasibility requirements
 
 | Client requirement (feasibility document) | Where it is implemented |
@@ -123,12 +142,12 @@ All calls use forced tool use / function calling, so output is structured JSON; 
 
 ## Next enhancements (suggested order)
 
-1. Real Meditab adapter once discovery confirms the interface. Add incremental sync and a freshness timestamp per section.
-2. OCR pipeline for scanned PDFs, with page-level citations, and measured OCR quality.
-3. AI-23 documentation audit: a rule engine over Valley Medical's approved rules.
-4. Evaluation harness: a labelled test set, scoring for the acceptance thresholds, and regression runs on every prompt or model change.
+1. Real Meditab adapter once discovery confirms the interface. Add incremental sync and a freshness report (acceptance criterion C06).
+2. OCR pipeline for scanned PDFs, with page-level citations, and measured OCR quality (WBS #5).
+3. Replace the illustrative documentation rules and billing rules with Valley Medical's approved rules.
+4. Grow the acceptance test set with Valley Medical's reviewers; run it on every prompt or model change (regression).
 5. Real sign-in (OIDC), Postgres, background jobs for model calls, and monitoring.
-6. Handling-time measurement to support the 30% productivity target.
+6. Sensitive-data segmentation for 42 CFR Part 2 and psychotherapy notes (WBS N2).
 
 ## Known limitations
 

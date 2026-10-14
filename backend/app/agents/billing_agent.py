@@ -217,7 +217,8 @@ class BillingAgent:
                          f"Proposed category {proposed_category(case)}; waiting for human review",
                          {"proposed": proposed_category(case), "flags": flags})
 
-    def review_classification(self, case_id: str, actor: Actor, *, decision: str, category: str | None, note: str | None) -> BillingCase:
+    def review_classification(self, case_id: str, actor: Actor, *, decision: str, category: str | None, note: str | None,
+                              handling_seconds: int | None = None) -> BillingCase:
         case = self.get_case(case_id)
         self._require(case, {CaseState.AWAITING_CLASSIFICATION_REVIEW})
         if decision == "confirm":
@@ -233,7 +234,8 @@ class BillingAgent:
         case.classification_reviewed_by = actor.username
         self._transition(case, {CaseState.AWAITING_CLASSIFICATION_REVIEW}, CaseState.CLASSIFICATION_CONFIRMED, actor,
                          f"Classification {'confirmed' if decision == 'confirm' else 'changed'}: {final}",
-                         {"decision": decision, "category": final, "note": note})
+                         {"decision": decision, "category": final, "note": note,
+                          "handling_seconds": _seconds(handling_seconds), "human": True})
         return self.advance(case.id, BILLING_AGENT)
 
     # ------------------------------------------------------------------ step 4
@@ -370,7 +372,8 @@ class BillingAgent:
                          BILLING_AGENT, f"Drafted {draft_type.replace('_', ' ')} (version {version}); waiting for approval",
                          {"draft_type": draft_type, "version": version, "warnings": len(warnings)})
 
-    def review_draft(self, case_id: str, actor: Actor, *, decision: str, edited_text: str | None, note: str | None) -> BillingCase:
+    def review_draft(self, case_id: str, actor: Actor, *, decision: str, edited_text: str | None, note: str | None,
+                     handling_seconds: int | None = None, edit_level: str | None = None) -> BillingCase:
         case = self.get_case(case_id)
         self._require(case, {CaseState.AWAITING_DRAFT_APPROVAL})
         if decision == "reject":
@@ -379,7 +382,8 @@ class BillingAgent:
             case.review_note = note
             case.draft_reviewed_by = actor.username
             self._transition(case, {CaseState.AWAITING_DRAFT_APPROVAL}, CaseState.DRAFT_REJECTED, actor,
-                             "Draft rejected", {"note": note, "version": case.draft_version})
+                             "Draft rejected", {"note": note, "version": case.draft_version, "edit_level": "rejected",
+                                                "handling_seconds": _seconds(handling_seconds), "human": True})
             return case
         if decision != "approve":
             raise ValidationFailedError("decision must be 'approve' or 'reject'")
@@ -390,7 +394,9 @@ class BillingAgent:
         case.review_note = note
         self._transition(case, {CaseState.AWAITING_DRAFT_APPROVAL}, CaseState.APPROVED, actor,
                          f"Draft approved by {actor.username}" + (" (edited)" if case.draft_source == "human_edited" else ""),
-                         {"version": case.draft_version, "edited": case.draft_source == "human_edited"})
+                         {"version": case.draft_version, "edited": case.draft_source == "human_edited",
+                          "edit_level": _edit_level(edit_level, case.draft_source == "human_edited"),
+                          "handling_seconds": _seconds(handling_seconds), "human": True})
         self._route(case)
         return case
 
@@ -405,20 +411,23 @@ class BillingAgent:
                          {"owner": owner, "channel": "platform_task", "external_submission": False})
 
     # ------------------------------------------------------------------ step 8
-    def update_tracking(self, case_id: str, actor: Actor, *, status: str, reference: str | None, note: str | None) -> BillingCase:
+    def update_tracking(self, case_id: str, actor: Actor, *, status: str, reference: str | None, note: str | None,
+                        handling_seconds: int | None = None) -> BillingCase:
         case = self.get_case(case_id)
         if status == "submitted_by_staff":
             if not reference:
                 raise ValidationFailedError("Give a reference for what staff submitted (for example a portal confirmation number)")
             case.external_status, case.external_reference = status, reference
             self._transition(case, {CaseState.ROUTED}, CaseState.SUBMITTED_BY_STAFF, actor,
-                             f"Staff recorded submission outside the platform (ref {reference})", {"reference": reference})
+                             f"Staff recorded submission outside the platform (ref {reference})",
+                             {"reference": reference, "handling_seconds": _seconds(handling_seconds), "human": True})
         elif status == "resolved":
             if case.state == CaseState.ESCALATED.value and not (note and note.strip()):
                 raise ValidationFailedError("Say how the escalated case was resolved")
             case.external_status = status
             self._transition(case, {CaseState.SUBMITTED_BY_STAFF, CaseState.ROUTED, CaseState.ESCALATED},
-                             CaseState.COMPLETED, actor, "Case resolved" + (f": {note}" if note else ""), {"note": note})
+                             CaseState.COMPLETED, actor, "Case resolved" + (f": {note}" if note else ""),
+                             {"note": note, "handling_seconds": _seconds(handling_seconds), "human": True})
             closed = self._exceptions.resolve_for("billing_case", case.id, actor,
                                                   f"Closed with case {case.claim_id}" + (f": {note}" if note else ""))
             if closed:
@@ -508,6 +517,23 @@ class BillingAgent:
                            patient_ref=case.meditab_patient_id, model=result.model, prompt_version=result.prompt_version,
                            detail={"attempts": result.attempts, "input_tokens": result.input_tokens,
                                    "output_tokens": result.output_tokens})
+
+
+MAX_HANDLING_SECONDS = 4 * 3600  # ignore implausible timer values (tab left open overnight)
+
+
+def _seconds(value: int | None) -> int | None:
+    """Time a person actively spent on this decision, measured by the UI."""
+    if value is None:
+        return None
+    return max(0, min(int(value), MAX_HANDLING_SECONDS))
+
+
+def _edit_level(value: str | None, edited: bool) -> str | None:
+    """Reviewer's rating for the D1 'usable with minor or no revision' criterion."""
+    if value in ("none", "minor", "major"):
+        return value
+    return None if edited else "none"
 
 
 def proposed_category(case: BillingCase) -> str | None:

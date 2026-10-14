@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { api, type CaseDetail } from "../api";
 import { ActionError, LoadState, Notice, Pill } from "../components/ui";
-import { useAction, useLoad } from "../hooks";
+import { useAction, useActiveTimer, useLoad } from "../hooks";
 import { CATEGORY_LABELS, DRAFT_LABELS, FLAG_LABELS, money, sourcePath, STATE_LABELS, stateTone, when } from "../labels";
 import { useSession } from "../session";
 
@@ -18,8 +18,13 @@ export default function CasePage() {
   return <CaseView c={data} onChange={setData} />;
 }
 
+const HUMAN_STATES = ["AWAITING_CLASSIFICATION_REVIEW", "AWAITING_DRAFT_APPROVAL", "DRAFT_REJECTED", "ROUTED", "SUBMITTED_BY_STAFF", "ESCALATED"];
+
 function CaseView({ c, onChange }: { c: CaseDetail; onChange: (c: CaseDetail) => void }) {
   const { user } = useSession();
+  // Active time on this case while it needs a person: feeds the handling-time measurement (AI-18).
+  const timer = useActiveTimer(HUMAN_STATES.includes(c.state));
+  const take = timer.take;
   const canReview = user.role === "biller" || user.role === "billing_approver";
   const canApprove = user.role === "billing_approver";
   const canWork = canReview;
@@ -58,11 +63,11 @@ function CaseView({ c, onChange }: { c: CaseDetail; onChange: (c: CaseDetail) =>
             </Notice>
           )}
 
-          <Classification c={c} canReview={canReview} onChange={onChange} />
+          <Classification c={c} canReview={canReview} onChange={onChange} take={take} />
           {(c.retrieved_records.length > 0 || c.gaps.length > 0 || c.meditab_patient_id) && <Records c={c} />}
-          {c.draft && <Draft c={c} canApprove={canApprove} onChange={onChange} />}
+          {c.draft && <Draft c={c} canApprove={canApprove} onChange={onChange} take={take} />}
           {c.state === "DRAFT_REJECTED" && canWork && <Redraft c={c} onChange={onChange} />}
-          {["ROUTED", "SUBMITTED_BY_STAFF", "ESCALATED"].includes(c.state) && canWork && <Tracking c={c} onChange={onChange} />}
+          {["ROUTED", "SUBMITTED_BY_STAFF", "ESCALATED"].includes(c.state) && canWork && <Tracking c={c} onChange={onChange} take={take} />}
           <ClaimFacts c={c} />
           <Events c={c} />
         </div>
@@ -71,7 +76,7 @@ function CaseView({ c, onChange }: { c: CaseDetail; onChange: (c: CaseDetail) =>
   );
 }
 
-function Classification({ c, canReview, onChange }: { c: CaseDetail; canReview: boolean; onChange: (c: CaseDetail) => void }) {
+function Classification({ c, canReview, onChange, take }: { c: CaseDetail; canReview: boolean; onChange: (c: CaseDetail) => void; take: () => number }) {
   const k = c.classification;
   const action = useAction();
   const [changeTo, setChangeTo] = useState("");
@@ -101,7 +106,7 @@ function Classification({ c, canReview, onChange }: { c: CaseDetail; canReview: 
           <label>Note (optional)<input value={note} onChange={(e) => setNote(e.target.value)} /></label>
           <div className="row">
             <button className="primary" disabled={action.busy}
-                    onClick={() => action.run(async () => onChange(await api.reviewClassification(c.id, { decision: "confirm", note: note || undefined })))}>
+                    onClick={() => action.run(async () => onChange(await api.reviewClassification(c.id, { decision: "confirm", note: note || undefined, handling_seconds: take() })))}>
               Confirm {label(k.proposed_category)}
             </button>
             <select aria-label="Change category to" value={changeTo} onChange={(e) => setChangeTo(e.target.value)}>
@@ -109,7 +114,7 @@ function Classification({ c, canReview, onChange }: { c: CaseDetail; canReview: 
               {c.categories.map((cat) => <option key={cat} value={cat}>{label(cat)}</option>)}
             </select>
             <button disabled={!changeTo || action.busy}
-                    onClick={() => action.run(async () => onChange(await api.reviewClassification(c.id, { decision: "change", category: changeTo, note: note || undefined })))}>
+                    onClick={() => action.run(async () => onChange(await api.reviewClassification(c.id, { decision: "change", category: changeTo, note: note || undefined, handling_seconds: take() })))}>
               Use this category
             </button>
           </div>
@@ -151,14 +156,17 @@ function Records({ c }: { c: CaseDetail }) {
   );
 }
 
-function Draft({ c, canApprove, onChange }: { c: CaseDetail; canApprove: boolean; onChange: (c: CaseDetail) => void }) {
+function Draft({ c, canApprove, onChange, take }: { c: CaseDetail; canApprove: boolean; onChange: (c: CaseDetail) => void; take: () => number }) {
   const d = c.draft!;
   const awaiting = c.state === "AWAITING_DRAFT_APPROVAL";
   const [text, setText] = useState(d.text);
   const [note, setNote] = useState("");
+  const [rating, setRating] = useState<"none" | "minor" | "major" | "">("");
   const action = useAction();
   useEffect(() => setText(d.text), [d.text, d.version]);
   const edited = text !== d.text;
+  useEffect(() => { if (!edited) setRating(""); }, [edited]);
+  const level = edited ? rating : "none";
 
   return (
     <div className="panel">
@@ -181,14 +189,25 @@ function Draft({ c, canApprove, onChange }: { c: CaseDetail; canApprove: boolean
       </p>
       {awaiting && canApprove && (
         <div className="decide">
+          {edited && (
+            <fieldset className="rating">
+              <legend>How much did you change? (measures draft usability)</legend>
+              {(["minor", "major"] as const).map((r) => (
+                <label key={r} className="radio">
+                  <input type="radio" name={`rating-${c.id}`} checked={rating === r} onChange={() => setRating(r)} />
+                  {r === "minor" ? "Minor edits (wording, small fixes)" : "Major rewrite (facts, structure or argument)"}
+                </label>
+              ))}
+            </fieldset>
+          )}
           <label>Note {edited ? "(optional)" : "(required to reject)"}<input value={note} onChange={(e) => setNote(e.target.value)} /></label>
           <div className="row">
-            <button className="primary" disabled={action.busy}
-                    onClick={() => action.run(async () => onChange(await api.reviewDraft(c.id, { decision: "approve", edited_text: edited ? text : undefined, note: note || undefined })))}>
+            <button className="primary" disabled={action.busy || (edited && !rating)}
+                    onClick={() => action.run(async () => onChange(await api.reviewDraft(c.id, { decision: "approve", edited_text: edited ? text : undefined, note: note || undefined, handling_seconds: take(), edit_level: level || undefined })))}>
               {edited ? "Approve with my edits" : "Approve and route"}
             </button>
             <button disabled={action.busy || !note.trim()}
-                    onClick={() => action.run(async () => onChange(await api.reviewDraft(c.id, { decision: "reject", note })))}>
+                    onClick={() => action.run(async () => onChange(await api.reviewDraft(c.id, { decision: "reject", note, handling_seconds: take() })))}>
               Reject draft
             </button>
           </div>
@@ -214,7 +233,7 @@ function Redraft({ c, onChange }: { c: CaseDetail; onChange: (c: CaseDetail) => 
   );
 }
 
-function Tracking({ c, onChange }: { c: CaseDetail; onChange: (c: CaseDetail) => void }) {
+function Tracking({ c, onChange, take }: { c: CaseDetail; onChange: (c: CaseDetail) => void; take: () => number }) {
   const [reference, setReference] = useState("");
   const [note, setNote] = useState("");
   const action = useAction();
@@ -227,7 +246,7 @@ function Tracking({ c, onChange }: { c: CaseDetail; onChange: (c: CaseDetail) =>
         <div className="decide">
           <label>Reference from the payer portal or clearinghouse<input value={reference} onChange={(e) => setReference(e.target.value)} /></label>
           <button className="primary" disabled={action.busy || !reference.trim()}
-                  onClick={() => action.run(async () => onChange(await api.tracking(c.id, { status: "submitted_by_staff", reference })))}>
+                  onClick={() => action.run(async () => onChange(await api.tracking(c.id, { status: "submitted_by_staff", reference, handling_seconds: take() })))}>
             Record staff submission
           </button>
           <p className="fine">Staff submit outside this platform, then record it here.</p>
@@ -240,7 +259,7 @@ function Tracking({ c, onChange }: { c: CaseDetail; onChange: (c: CaseDetail) =>
             <input value={note} onChange={(e) => setNote(e.target.value)} placeholder={c.state === "ESCALATED" ? "What was done to resolve it?" : ""} />
           </label>
           <button disabled={action.busy || (c.state === "ESCALATED" && note.trim().length < 3)}
-                  onClick={() => action.run(async () => onChange(await api.tracking(c.id, { status: "resolved", note: note || undefined })))}>
+                  onClick={() => action.run(async () => onChange(await api.tracking(c.id, { status: "resolved", note: note || undefined, handling_seconds: take() })))}>
             Mark resolved
           </button>
           <p className="fine">Resolving the case also closes its open exceptions.</p>

@@ -31,6 +31,7 @@ class MockLLMClient(LLMClient):
             "previsit_summary": self._previsit,
             "billing_classify": self._classify,
             "billing_draft": self._draft,
+            "doc_audit_notes": self._doc_audit,
         }.get(task)
         if handler is None:
             raise LLMError(f"Mock LLM has no handler for task '{task}'")
@@ -54,6 +55,22 @@ class MockLLMClient(LLMClient):
             latest = max(pain, key=lambda e: e["data"]["recorded_on"])
             statements.append(("pain_trend", f"Most recent pain score {latest['data']['display_value']} on {latest['data']['recorded_on']}.", latest["id"]))
         return {"statements": [{"section": s, "text": t, "evidence_ids": [e]} for s, t, e in statements]}
+
+    @staticmethod
+    def _doc_audit(ctx: dict) -> dict:
+        """Keyword heuristics standing in for a model: 'Plan:'/'Continue' for a plan, 'Indication' for a reason."""
+        import re
+
+        notes = {n["encounter_id"]: n["note"] for n in ctx.get("notes", [])}
+        keywords = {"DA-06": ("plan:", "continue"), "DA-07": ("indication",)}
+        checks = []
+        for pair in ctx.get("pairs", []):
+            note = notes.get(pair["encounter_id"], "")
+            sentences = re.split(r"(?<=[.!?])\s+", note)
+            hit = next((x for x in sentences if any(k in x.lower() for k in keywords.get(pair["rule_id"], ()))), None)
+            checks.append({"rule_id": pair["rule_id"], "encounter_id": pair["encounter_id"], "met": hit is not None,
+                           "evidence_quote": hit or "", "explanation": "Keyword match (mock model)."})
+        return {"checks": checks}
 
     @staticmethod
     def _classify(ctx: dict) -> dict:
