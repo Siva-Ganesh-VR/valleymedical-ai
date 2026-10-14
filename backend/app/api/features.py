@@ -16,6 +16,7 @@ from app.llm.gateway import month_prefix, pause_state, set_paused, tokens_used_t
 from app.models import AcceptanceRun, LLMCall
 from app.security import Actor, Permission
 from app.services.acceptance import CRITERIA, AcceptanceHarness, view as acceptance_view
+from app.services.batch_lock import exclusive
 from app.services.demo_workload import load_demo_workload
 
 router = APIRouter(prefix="/api", tags=["features"])
@@ -93,11 +94,12 @@ def demo_baselines(actor: Actor = Depends(require(Permission.BASELINE_EDIT)),
 @router.post("/billing/queues/{queue}/demo-workload")
 def demo_workload(queue: str, actor: Actor = Depends(require(Permission.DEMO_WORKLOAD)),
                   container: Container = Depends(get_container), session: Session = Depends(get_session)):
-    agent = container.billing_agent(session)
-    out = load_demo_workload(agent, queue, actor)
-    container.audit(session).record(actor=actor, action="billing.demo_workload.loaded", entity_type="queue", entity_id=queue,
-                                    detail={"moved": len(out["moved"]), "skipped": len(out["skipped"])})
-    session.commit()
+    with exclusive(queue, "Load demo workload"):
+        agent = container.billing_agent(session)
+        out = load_demo_workload(agent, queue, actor)
+        container.audit(session).record(actor=actor, action="billing.demo_workload.loaded", entity_type="queue", entity_id=queue,
+                                        detail={"moved": len(out["moved"]), "skipped": len(out["skipped"])})
+        session.commit()
     return out
 
 

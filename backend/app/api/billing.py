@@ -11,6 +11,7 @@ from app.api.deps import get_container, get_session, require
 from app.container import Container
 from app.models import BillingCase
 from app.security import Actor, Permission
+from app.services.batch_lock import exclusive
 from app.services.billing_rules import Category
 
 router = APIRouter(prefix="/api/billing", tags=["billing"])
@@ -87,8 +88,9 @@ def queues(actor: Actor = Depends(require(Permission.BILLING_READ)), container: 
 @router.post("/queues/{queue}/sync")
 def sync_queue(queue: str, actor: Actor = Depends(require(Permission.BILLING_WORK)),
                container: Container = Depends(get_container), session: Session = Depends(get_session)):
-    result = container.billing_agent(session).sync_queue(queue, actor)
-    session.commit()
+    with exclusive(queue, "Read work queue"):
+        result = container.billing_agent(session).sync_queue(queue, actor)
+        session.commit()
     return result
 
 
@@ -127,8 +129,9 @@ def retry_ai(case_id: str, actor: Actor = Depends(require(Permission.BILLING_WOR
 @router.post("/queues/{queue}/retry-ai")
 def retry_queue_ai(queue: str, actor: Actor = Depends(require(Permission.BILLING_WORK)),
                    container: Container = Depends(get_container), session: Session = Depends(get_session)):
-    result = container.billing_agent(session).retry_failed_ai(queue, actor)
-    session.commit()
+    with exclusive(queue, "Retry with AI"):
+        result = container.billing_agent(session).retry_failed_ai(queue, actor)
+        session.commit()
     return result
 
 

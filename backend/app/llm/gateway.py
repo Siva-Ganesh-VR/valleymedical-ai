@@ -88,6 +88,12 @@ class LLMGateway(LLMClient):
         except AIPausedError as exc:
             self._record(task, prompt_version, "blocked", note=str(exc))
             raise
+        # Save work so far BEFORE waiting on the model. A model call (plus rate-limit spacing) can take
+        # seconds to minutes; holding SQLite's single write lock that long blocks every other user
+        # ("database is locked"). Each agent step is a complete state transition, so committing here
+        # never leaves a half-finished case.
+        if self._s.in_transaction():
+            self._s.commit()
         started = time.perf_counter()
         try:
             result = self._inner.structured(task=task, system=system, user=user, tool_name=tool_name,

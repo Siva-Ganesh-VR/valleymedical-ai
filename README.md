@@ -186,6 +186,8 @@ Reading a 27-claim queue makes one model call per claim, and loading the demo wo
 - **Fails safely** if a call still fails: the case goes to the exception queue, nothing is guessed.
 - **Recovers in one click**: *Billing work → Retry N with AI*, or *Retry with AI* on a case. Only model failures can be retried; hard stops and safety escalations still need a person.
 
+Batch actions are also protected: the app saves its work before every model call, so a long batch never holds the database lock while it waits, and only one batch (*Read work queue*, *Load demo workload*, *Retry with AI*) runs per queue at a time. A second one gets a "still running, wait" message instead of a "database is locked" error.
+
 A daily quota cannot be throttled around. If it is used up, use a paid key or `VM_LLM_PROVIDER=mock` for the demo.
 
 ## Known limitations

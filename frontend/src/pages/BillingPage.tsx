@@ -73,6 +73,8 @@ export default function BillingPage() {
   const totalAtStake = shown.reduce((sum, c) => sum + c.billed_amount, 0);
   const aiFailed = all.filter((c) => c.escalation_kind === "llm_failure");
   const retry = useAction();
+  // Only one batch per queue can run at a time (the server enforces this too).
+  const batchBusy = sync.busy || seed.busy || retry.busy;
   const retryAll = () => retry.run(async () => {
     const r = await api.retryQueueAi(queue);
     setSyncNote(r.still_failing.length
@@ -106,12 +108,12 @@ export default function BillingPage() {
           </select>
         </label>
         {canWork && (
-          <button className="primary" disabled={!queue || sync.busy} onClick={pull}>
+          <button className="primary" disabled={!queue || batchBusy} onClick={pull}>
             {sync.busy ? "Reading queue…" : "Read work queue"}
           </button>
         )}
         {canSeed && (
-          <button disabled={!queue || seed.busy} onClick={loadDemo} title="Moves synthetic cases through the real agent into a mix of statuses">
+          <button disabled={!queue || batchBusy} onClick={loadDemo} title="Moves synthetic cases through the real agent into a mix of statuses">
             {seed.busy ? "Loading…" : "Load demo workload"}
           </button>
         )}
@@ -125,7 +127,7 @@ export default function BillingPage() {
         <Notice tone="human" title={`${aiFailed.length} case${aiFailed.length === 1 ? "" : "s"} stopped because the AI model didn't respond`}>
           <p>Usually the provider's rate limit (too many requests per minute). Nothing was lost; these cases are safe in the exception queue. Retry once the limit resets.</p>
           {canWork && (
-            <button className="primary" disabled={retry.busy} onClick={retryAll}>
+            <button className="primary" disabled={batchBusy} onClick={retryAll}>
               {retry.busy ? "Retrying, spacing calls to stay under the limit…" : `Retry ${aiFailed.length} with AI`}
             </button>
           )}
