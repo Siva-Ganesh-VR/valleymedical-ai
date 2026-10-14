@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { features, type DocAuditView } from "../api";
 import { useAction, useLoad } from "../hooks";
-import { when } from "../labels";
+import { usText, when } from "../labels";
 import { useSession } from "../session";
 import type { SourceSelection } from "./SourcePanel";
 import { ActionError, LoadState, Notice, Pill } from "./ui";
@@ -74,7 +74,7 @@ function AuditResult({ view, onCite, canReview, onReviewed }: {
         <ul className="plain passed">
           {view.passed.map((p, i) => (
             <li key={i}>
-              <strong>{p.rule_id}</strong> {view.rules.find((r) => r.rule_id === p.rule_id)?.title}, {p.target}: {p.note}
+              <strong>{p.rule_id}</strong> {view.rules.find((r) => r.rule_id === p.rule_id)?.title}, {p.target}: {usText(p.note)}
               {p.evidence[0] && <> <button className="link" onClick={() => onCite({ label: p.rule_id, display: p.evidence[0].display, source: p.evidence[0].source })}>source</button></>}
             </li>
           ))}
@@ -104,7 +104,7 @@ function FindingItem({ f, onCite, canReview, onReviewed }: {
         </span>
         {f.status !== "open" && <Pill tone={f.status === "confirmed" ? "done" : "neutral"}>{f.status} by {f.reviewed_by}</Pill>}
       </div>
-      <p>{f.message}</p>
+      <p>{usText(f.message)}</p>
       {f.evidence.map((e) => (
         <button key={e.item_id} className="link source-link" onClick={() => onCite({ label: f.rule_id, display: e.display, source: e.source })}>
           Meditab / {e.source.record_type} / {e.source.record_id}

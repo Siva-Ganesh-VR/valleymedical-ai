@@ -6,7 +6,7 @@ import SourcePanel, { type SourceSelection } from "../components/SourcePanel";
 import Sparkline from "../components/Sparkline";
 import { ActionError, LoadState, Notice } from "../components/ui";
 import { useAction, useLoad } from "../hooks";
-import { SECTION_LABELS, sourcePath, when } from "../labels";
+import { SECTION_LABELS, sourcePath, usDate, usText, when } from "../labels";
 
 const TABS = ["summary", "chronic", "audit", "medications", "allergies", "problems", "labs", "encounters", "documents"] as const;
 type Tab = (typeof TABS)[number];
@@ -34,7 +34,7 @@ export default function PatientPage() {
           <h1>{p.last_name}, {p.first_name}</h1>
           <dl className="facts">
             <div><dt>MRN</dt><dd>{p.mrn}</dd></div>
-            <div><dt>Date of birth</dt><dd>{p.dob}</dd></div>
+            <div><dt>Date of birth</dt><dd>{usDate(p.dob)}</dd></div>
             <div><dt>Sex</dt><dd>{p.sex}</dd></div>
             <div><dt>Read from Meditab</dt><dd>{when(record.retrieved_at)}</dd></div>
           </dl>
@@ -86,8 +86,8 @@ function SectionTable({ record, section, onCite }: { record: ClinicalRecord; sec
     <ul className="record-list">
       {items.map((i) => (
         <li key={i.item_id}>
-          <span className="record-date num">{i.date}</span>
-          <span className="record-text">{i.display}</span>
+          <span className="record-date num">{usDate(i.date)}</span>
+          <span className="record-text">{usText(i.display)}</span>
           <button className="link source-link" onClick={() => onCite({ label: SECTION_LABELS[section], display: i.display, source: i.source })}>
             {sourcePath(i.source)}
           </button>
@@ -139,7 +139,7 @@ function SummaryTab({ patientId, onCite }: { patientId: string; onCite: (s: Sour
             <article className="narrative">
               {result.statements.map((s, idx) => (
                 <p key={idx}>
-                  {s.text}
+                  {usText(s.text)}
                   {s.citations.map((c, ci) => (
                     <button key={c.evidence_id} className="cite" title={sourcePath(c.source)}
                             onClick={() => onCite({ label: `Source ${idx + 1}.${ci + 1}`, display: c.display, source: c.source })}>
@@ -153,7 +153,7 @@ function SummaryTab({ patientId, onCite }: { patientId: string; onCite: (s: Sour
           {result.removed.length > 0 && (
             <details className="removed">
               <summary>{result.removed.length} statement{result.removed.length > 1 ? "s" : ""} removed because they couldn't be traced to a source</summary>
-              <ul>{result.removed.map((r, i) => <li key={i}><s>{r.text}</s> <span className="fine">{r.reasons.join("; ")}</span></li>)}</ul>
+              <ul>{result.removed.map((r, i) => <li key={i}><s>{usText(r.text)}</s> <span className="fine">{r.reasons.join("; ")}</span></li>)}</ul>
             </details>
           )}
           <p className="fine">Draft for clinician review. Written {when(result.generated_at)} by {result.model ?? "no model"} using prompt {result.prompt_version}.</p>
@@ -169,7 +169,7 @@ function VerifiedList({ items, empty, onCite, label }: { items: RecordItem[]; em
     <ul className="plain">
       {items.map((i) => (
         <li key={i.item_id}>
-          <button className="link" onClick={() => onCite({ label, display: i.display, source: i.source })}>{i.display}</button>
+          <button className="link" onClick={() => onCite({ label, display: i.display, source: i.source })}>{usText(i.display)}</button>
         </li>
       ))}
     </ul>
@@ -193,8 +193,8 @@ function ChronicTab({ patientId, onCite }: { patientId: string; onCite: (s: Sour
                 <ol className="points">
                   {d.points.map((p) => (
                     <li key={p.item_id}>
-                      <button className="link" onClick={() => onCite({ label: d.label, display: `${d.label} ${p.display_value} (${p.instrument}) on ${p.date}`, source: p.source })}>
-                        <span className="num">{p.date}</span> <strong>{p.display_value}</strong>
+                      <button className="link" onClick={() => onCite({ label: d.label, display: `${d.label} ${p.display_value} (${p.instrument}) on ${usDate(p.date)}`, source: p.source })}>
+                        <span className="num">{usDate(p.date)}</span> <strong>{p.display_value}</strong>
                       </button>
                     </li>
                   ))}
@@ -216,9 +216,9 @@ function ChronicTab({ patientId, onCite }: { patientId: string; onCite: (s: Sour
             {data.treatment_responses.map((t) => (
               <tr key={t.procedure.item_id}>
                 <td><button className="link" onClick={() => onCite({ label: "Procedure", display: t.procedure.display, source: t.procedure.source })}>{String(t.procedure.data.name)}</button></td>
-                <td className="num">{t.procedure.date}</td>
-                <td className="num">{t.pain_before ? `${t.pain_before.display_value} (${t.pain_before.date})` : "No score within 90 days"}</td>
-                <td className="num">{t.pain_after ? `${t.pain_after.display_value} (${t.pain_after.date})` : "No score within 90 days"}</td>
+                <td className="num">{usDate(t.procedure.date)}</td>
+                <td className="num">{t.pain_before ? `${t.pain_before.display_value} (${usDate(t.pain_before.date)})` : "No score within 90 days"}</td>
+                <td className="num">{t.pain_after ? `${t.pain_after.display_value} (${usDate(t.pain_after.date)})` : "No score within 90 days"}</td>
               </tr>
             ))}
           </tbody>

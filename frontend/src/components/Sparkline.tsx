@@ -1,4 +1,5 @@
 import type { TrendPoint } from "../api";
+import { usDate } from "../labels";
 
 export default function Sparkline({ points, label }: { points: TrendPoint[]; label: string }) {
   const w = 240, h = 64, pad = 8;
@@ -10,7 +11,7 @@ export default function Sparkline({ points, label }: { points: TrendPoint[]; lab
   const y = (v: number) => h - pad - ((v - min) / span) * (h - 2 * pad);
   const d = points.map((p, i) => `${i ? "L" : "M"}${x(i).toFixed(1)} ${y(p.value).toFixed(1)}`).join(" ");
   return (
-    <svg className="spark" viewBox={`0 0 ${w} ${h}`} role="img" aria-label={`${label}: ${points.map((p) => `${p.display_value} on ${p.date}`).join(", ")}`}>
+    <svg className="spark" viewBox={`0 0 ${w} ${h}`} role="img" aria-label={`${label}: ${points.map((p) => `${p.display_value} on ${usDate(p.date)}`).join(", ")}`}>
       <path d={d} fill="none" stroke="currentColor" strokeWidth="1.5" />
       {points.map((p, i) => (
         <circle key={p.item_id} cx={x(i)} cy={y(p.value)} r="3" fill="currentColor" />

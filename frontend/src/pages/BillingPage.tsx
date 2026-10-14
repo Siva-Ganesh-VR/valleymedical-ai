@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { api } from "../api";
 import { ActionError, LoadState, Notice, Pill } from "../components/ui";
 import { useAction, useLoad } from "../hooks";
-import { CATEGORY_LABELS, FLAG_LABELS, money, STATE_LABELS, stateTone } from "../labels";
+import { CATEGORY_LABELS, FLAG_LABELS, money, STATE_LABELS, stateTone, usDate } from "../labels";
 import { useSession } from "../session";
 
 export default function BillingPage() {
@@ -67,7 +67,7 @@ export default function BillingPage() {
                   onKeyDown={(e) => e.key === "Enter" && navigate(`/billing/cases/${c.id}`)}>
                 <td><strong>{c.claim_id}</strong>{c.denial_code && <span className="fine"> code {c.denial_code}</span>}</td>
                 <td>{c.payer}</td>
-                <td className="num">{c.date_of_service}</td>
+                <td className="num">{usDate(c.date_of_service)}</td>
                 <td className="num">{money(c.billed_amount)}</td>
                 <td>
                   {c.category ? CATEGORY_LABELS[c.category] ?? c.category : "None"}

@@ -30,7 +30,10 @@ export default function InsightsPage() {
     const url = URL.createObjectURL(new Blob([text], { type: "text/csv" }));
     const a = document.createElement("a");
     a.href = url;
-    a.download = `billing-cases-${new Date().toISOString().slice(0, 10)}.csv`;
+    const t = new Date();
+    const p2 = (n: number) => String(n).padStart(2, "0");
+    // US order; "/" is not allowed in file names, so MM-DD-YYYY.
+    a.download = `billing-cases-${p2(t.getMonth() + 1)}-${p2(t.getDate())}-${t.getFullYear()}.csv`;
     a.click();
     URL.revokeObjectURL(url);
   });

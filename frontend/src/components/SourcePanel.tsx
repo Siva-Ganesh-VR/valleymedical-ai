@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 import type { SourceRef } from "../api";
-import { sourcePath } from "../labels";
+import { sourcePath, usDate, usText } from "../labels";
 
 export interface SourceSelection {
   label: string;
@@ -29,11 +29,11 @@ export default function SourcePanel({ selection, onClose }: { selection: SourceS
       </div>
       <p className="source-path">{sourcePath(s)}</p>
       <dl className="source-meta">
-        {s.recorded_on && (<><dt>Date</dt><dd>{s.recorded_on}</dd></>)}
+        {s.recorded_on && (<><dt>Date</dt><dd>{usDate(s.recorded_on)}</dd></>)}
         {s.encounter_id && (<><dt>Encounter</dt><dd>{s.encounter_id}</dd></>)}
         {s.page && (<><dt>Page</dt><dd>{s.page}</dd></>)}
       </dl>
-      <blockquote className="source-text">{selection.display}</blockquote>
+      <blockquote className="source-text">{usText(selection.display)}</blockquote>
       <p className="fine">Read-only copy of the Meditab record. Open it in Meditab to change it.</p>
     </aside>
   );

@@ -68,11 +68,36 @@ export function money(n: number) {
   return n.toLocaleString("en-US", { style: "currency", currency: "USD" });
 }
 
-// Unambiguous year-month-day in every locale. toLocaleString() printed 8/10/2026 on an
-// Indian-locale machine, which a US reader takes as 10 August.
+// US format (MM/DD/YYYY). Always explicit, so the display never depends on the machine's locale
+// (toLocaleString() printed 10/8/2026 vs 8/10/2026 depending on the region).
+export function usDate(iso: string | null | undefined) {
+  if (!iso) return "";
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso);
+  if (m) return `${m[2]}/${m[3]}/${m[1]}`;
+  return iso;
+}
+
+// Timestamp as MM/DD/YYYY hh:mm AM/PM in the viewer's time zone.
 export function when(iso: string) {
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return iso;
   const p = (n: number) => String(n).padStart(2, "0");
-  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`;
+  const h = d.getHours() % 12 || 12;
+  return `${p(d.getMonth() + 1)}/${p(d.getDate())}/${d.getFullYear()} ${p(h)}:${p(d.getMinutes())} ${d.getHours() < 12 ? "AM" : "PM"}`;
+}
+
+// Rewrites ISO dates and timestamps inside free text (record lines, findings, drafts) for display.
+// Display only: never pass the result back to the API or into an editable field.
+export function usText(text: string | null | undefined) {
+  if (!text) return text ?? "";
+  return text.replace(
+    /\b(\d{4})-(\d{2})-(\d{2})(T\d{2}:\d{2}(?::\d{2}(?:\.\d+)?)?(?:Z|[+-]\d{2}:?\d{2})?)?(?!\d)/g,
+    (m, y, mo, d, time) => (time ? when(m) : `${mo}/${d}/${y}`),
+  );
+}
+
+// "2026-10" -> "10/2026"
+export function usMonth(ym: string) {
+  const m = /^(\d{4})-(\d{2})$/.exec(ym);
+  return m ? `${m[2]}/${m[1]}` : ym;
 }

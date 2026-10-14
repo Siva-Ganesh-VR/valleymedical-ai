@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { api } from "../api";
 import { LoadState } from "../components/ui";
 import { useLoad } from "../hooks";
+import { usDate } from "../labels";
 
 export default function PatientsPage() {
   const [query, setQuery] = useState("");
@@ -36,7 +37,7 @@ export default function PatientsPage() {
               <tr key={p.patient_id}>
                 <td><Link to={`/patients/${p.patient_id}`}>{p.last_name}, {p.first_name}</Link></td>
                 <td className="num">{p.mrn}</td>
-                <td className="num">{p.dob}</td>
+                <td className="num">{usDate(p.dob)}</td>
                 <td>{p.sex}</td>
               </tr>
             ))}

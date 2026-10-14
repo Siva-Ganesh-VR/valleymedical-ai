@@ -3,7 +3,7 @@ import { Link, useParams } from "react-router-dom";
 import { api, type CaseDetail } from "../api";
 import { ActionError, LoadState, Notice, Pill } from "../components/ui";
 import { useAction, useActiveTimer, useLoad } from "../hooks";
-import { CATEGORY_LABELS, DRAFT_LABELS, FLAG_LABELS, money, sourcePath, STATE_LABELS, stateTone, when } from "../labels";
+import { CATEGORY_LABELS, DRAFT_LABELS, FLAG_LABELS, STATE_LABELS, money, sourcePath, stateTone, usDate, usText, when } from "../labels";
 import { useSession } from "../session";
 
 const STEP_TEXT: Record<string, string> = {
@@ -35,7 +35,7 @@ function CaseView({ c, onChange }: { c: CaseDetail; onChange: (c: CaseDetail) =>
       <header className="page-head case-head">
         <div>
           <h1>Claim {c.claim_id}</h1>
-          <p className="lede">{c.payer}, service on {c.date_of_service}, {money(c.billed_amount)}</p>
+          <p className="lede">{c.payer}, service on {usDate(c.date_of_service)}, {money(c.billed_amount)}</p>
         </div>
         <Pill tone={stateTone(c.state)}>{STATE_LABELS[c.state] ?? c.state}</Pill>
       </header>
@@ -139,7 +139,7 @@ function Records({ c }: { c: CaseDetail }) {
           <ul className="record-list compact">
             {c.retrieved_records.filter((r) => r.requirement === g).map((r) => (
               <li key={r.item_id}>
-                <span className="record-text">{r.display}</span>
+                <span className="record-text">{usText(r.display)}</span>
                 <span className="fine">{sourcePath(r.source)}</span>
               </li>
             ))}
@@ -148,7 +148,7 @@ function Records({ c }: { c: CaseDetail }) {
       ))}
       {c.gaps.length > 0 && (
         <Notice tone="human" title="Missing items">
-          <ul>{c.gaps.map((g) => <li key={g.key}><strong>{g.label}.</strong> {g.reason}.</li>)}</ul>
+          <ul>{c.gaps.map((g) => <li key={g.key}><strong>{g.label}.</strong> {usText(g.reason)}.</li>)}</ul>
         </Notice>
       )}
       {c.gaps.length === 0 && c.retrieved_records.length > 0 && <p className="fine">No missing items found.</p>}
@@ -175,12 +175,12 @@ function Draft({ c, canApprove, onChange, take }: { c: CaseDetail; canApprove: b
       {awaiting && canApprove ? (
         <textarea className="draft-text" value={text} onChange={(e) => setText(e.target.value)} rows={Math.min(24, text.split("\n").length + 2)} aria-label="Draft text" />
       ) : (
-        <pre className="draft-text">{d.text}</pre>
+        <pre className="draft-text">{usText(d.text)}</pre>
       )}
       {d.evidence.length > 0 && (
         <details>
           <summary>{d.evidence.length} cited record{d.evidence.length > 1 ? "s" : ""}</summary>
-          <ul className="plain">{d.evidence.map((e) => <li key={e.id}><strong>[{e.id}]</strong> {e.text}</li>)}</ul>
+          <ul className="plain">{d.evidence.map((e) => <li key={e.id}><strong>[{e.id}]</strong> {usText(e.text)}</li>)}</ul>
         </details>
       )}
       <p className="fine">
@@ -282,7 +282,7 @@ function ClaimFacts({ c }: { c: CaseDetail }) {
         <dt>Submitted</dt><dd>{k.submitted_on ?? "Unknown"}</dd>
         <dt>Authorization</dt><dd>{k.authorization_number ?? "None on claim"}</dd>
         {k.denial && (<>
-          <dt>Denial</dt><dd>Code {k.denial.carc_code}: {k.denial.description} ({k.denial.denial_date})</dd>
+          <dt>Denial</dt><dd>Code {k.denial.carc_code}: {k.denial.description} ({usDate(k.denial.denial_date)})</dd>
           {k.denial.payer_remark && (<><dt>Payer remark</dt><dd className="untrusted">{k.denial.payer_remark}</dd></>)}
         </>)}
       </dl>
@@ -298,7 +298,7 @@ function Events({ c }: { c: CaseDetail }) {
         {c.events.map((e, i) => (
           <li key={i}>
             <span className="num fine">{when(e.ts)}</span>
-            <span>Step {e.step}: {e.summary}</span>
+            <span>Step {e.step}: {usText(e.summary)}</span>
             <span className="fine">{e.actor}</span>
           </li>
         ))}

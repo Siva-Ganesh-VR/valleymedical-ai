@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { api, type ExceptionRow } from "../api";
 import { ActionError, LoadState, Pill } from "../components/ui";
 import { useAction, useLoad } from "../hooks";
-import { when } from "../labels";
+import { usText, when } from "../labels";
 import { useSession } from "../session";
 
 const KIND_LABELS: Record<string, string> = {
@@ -56,7 +56,7 @@ function ExceptionItem({ e, canResolve, onResolved }: { e: ExceptionRow; canReso
         <span><Pill tone={tone}>{e.severity}</Pill> <strong>{KIND_LABELS[e.kind] ?? e.kind}</strong></span>
         <span className="fine num">{when(e.created_at)}</span>
       </div>
-      <p>{e.summary}</p>
+      <p>{usText(e.summary)}</p>
       <p className="fine">
         {e.entity_type === "billing_case" ? <Link to={`/billing/cases/${e.entity_id}`}>Open the billing case</Link> : `${e.entity_type} ${e.entity_id}`}
       </p>

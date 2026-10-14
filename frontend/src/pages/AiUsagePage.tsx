@@ -2,7 +2,7 @@ import { useState } from "react";
 import { features } from "../api";
 import { ActionError, LoadState, Notice, Pill } from "../components/ui";
 import { useAction, useLoad } from "../hooks";
-import { when } from "../labels";
+import { usDate, usMonth, usText, when } from "../labels";
 import { useSession } from "../session";
 
 const TASK_LABELS: Record<string, string> = {
@@ -39,7 +39,7 @@ export default function AiUsagePage() {
       <div className="kpis">
         <div className="kpi"><span className="kpi-label">Provider and model</span><span className="kpi-value small">{u.provider}</span><span className="fine">{u.model}</span></div>
         <div className="kpi">
-          <span className="kpi-label">Tokens this month ({u.month})</span>
+          <span className="kpi-label">Tokens this month ({usMonth(u.month)})</span>
           <span className="kpi-value">{u.tokens_this_month.toLocaleString()}</span>
           {u.monthly_budget ? (
             <>
@@ -96,7 +96,7 @@ export default function AiUsagePage() {
           <ul className="bars">
             {u.by_day.map((d) => (
               <li key={d.day}>
-                <span className="bar-label num">{d.day}</span>
+                <span className="bar-label num">{usDate(d.day)}</span>
                 <span className="bar-track"><span className="bar-fill" style={{ width: `${(d.tokens / maxDay) * 100}%` }} /></span>
                 <span className="num">{d.tokens.toLocaleString()}</span>
               </li>
@@ -114,7 +114,7 @@ export default function AiUsagePage() {
               <tr key={i}>
                 <td className="num">{when(c.ts)}</td>
                 <td>{TASK_LABELS[c.task] ?? c.task}</td>
-                <td><Pill tone={c.status === "ok" ? "done" : c.status === "reused" ? "neutral" : "critical"}>{c.status}</Pill>{c.note && <div className="fine">{c.note}</div>}</td>
+                <td><Pill tone={c.status === "ok" ? "done" : c.status === "reused" ? "neutral" : "critical"}>{c.status}</Pill>{c.note && <div className="fine">{usText(c.note)}</div>}</td>
                 <td>{c.model ?? ""}<div className="fine">{c.prompt_version ?? ""}</div></td>
                 <td className="num">{c.tokens.toLocaleString()}</td>
                 <td className="num">{c.latency_ms ? `${(c.latency_ms / 1000).toFixed(1)}s` : ""}</td>
