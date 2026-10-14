@@ -17,7 +17,10 @@ from app.audit import AuditLogger
 from app.config import Settings
 from app.db import Base, build_engine, build_sessionmaker
 from app.llm.client import LLMClient, build_llm_client
+from app.llm.gateway import LLMGateway
 from app.services.chronic_pain import ChronicPainService
+from app.services.doc_audit import DocumentationAuditService
+from app.services.billing_insights import BillingInsightsService
 from app.services.clinical_record import ClinicalRecordService
 from app.services.exceptions import ExceptionService
 from app.services.patient_matching import PatientMatcher
@@ -47,15 +50,25 @@ class Container:
     def records(self, s: Session) -> ClinicalRecordService:
         return ClinicalRecordService(self.meditab, self.matcher(), self.exceptions(s), self.audit(s))
 
+    def ai(self, s: Session) -> LLMGateway:
+        """Every model call goes through the metered gateway (budget, kill switch, usage log)."""
+        return LLMGateway(self.llm, s, self.settings)
+
     def summaries(self, s: Session) -> PreVisitSummaryService:
-        return PreVisitSummaryService(self.records(s), self.llm, self.audit(s), self.exceptions(s))
+        return PreVisitSummaryService(self.records(s), self.ai(s), self.audit(s), self.exceptions(s), session=s)
+
+    def billing_insights(self, s: Session) -> BillingInsightsService:
+        return BillingInsightsService(s, self.billing, self.audit(s))
+
+    def doc_audit(self, s: Session) -> DocumentationAuditService:
+        return DocumentationAuditService(s, self.records(s), self.ai(s), self.audit(s), self.clock)
 
     def chronic_pain(self, s: Session) -> ChronicPainService:
         return ChronicPainService(self.records(s))
 
     def billing_agent(self, s: Session) -> BillingAgent:
         return BillingAgent(session=s, settings=self.settings, billing=self.billing, records=self.records(s),
-                            matcher=self.matcher(), llm=self.llm, audit=self.audit(s),
+                            matcher=self.matcher(), llm=self.ai(s), audit=self.audit(s),
                             exceptions=self.exceptions(s), clock=self.clock)
 
 

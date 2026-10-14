@@ -71,6 +71,14 @@ STEPS = [
     (8, "Track to completion"),
 ]
 
+# Step a transition INTO this state is recorded against (what just happened).
+EVENT_STEP = {
+    CaseState.AWAITING_CLASSIFICATION_REVIEW: 3, CaseState.CLASSIFICATION_CONFIRMED: 3,
+    CaseState.RECORDS_RETRIEVED: 4, CaseState.AWAITING_DRAFT_APPROVAL: 6, CaseState.DRAFT_REJECTED: 6,
+    CaseState.APPROVED: 6, CaseState.ROUTED: 7, CaseState.SUBMITTED_BY_STAFF: 8, CaseState.COMPLETED: 8,
+}
+
+# Step a case in this state is currently on (what happens next).
 STATE_STEP = {
     CaseState.IDENTIFIED: 3, CaseState.NO_ACTION: 2, CaseState.AWAITING_CLASSIFICATION_REVIEW: 3,
     CaseState.CLASSIFICATION_CONFIRMED: 4, CaseState.RECORDS_RETRIEVED: 5,
@@ -184,7 +192,7 @@ class BillingAgent:
                 context={"carc_code": item.denial.carc_code if item.denial else None, "problem_type": case.problem_type},
             )
         except LLMError as exc:
-            self._escalate(case, f"Classification failed: {exc}", kind="llm_failure", severity="medium")
+            self._escalate(case, f"Classification failed: {exc}", kind="llm_failure", severity="medium", step=3)
             return
         self._log_llm(case, "classify", result)
 
@@ -209,7 +217,8 @@ class BillingAgent:
                          f"Proposed category {proposed_category(case)}; waiting for human review",
                          {"proposed": proposed_category(case), "flags": flags})
 
-    def review_classification(self, case_id: str, actor: Actor, *, decision: str, category: str | None, note: str | None) -> BillingCase:
+    def review_classification(self, case_id: str, actor: Actor, *, decision: str, category: str | None, note: str | None,
+                              handling_seconds: int | None = None) -> BillingCase:
         case = self.get_case(case_id)
         self._require(case, {CaseState.AWAITING_CLASSIFICATION_REVIEW})
         if decision == "confirm":
@@ -225,7 +234,8 @@ class BillingAgent:
         case.classification_reviewed_by = actor.username
         self._transition(case, {CaseState.AWAITING_CLASSIFICATION_REVIEW}, CaseState.CLASSIFICATION_CONFIRMED, actor,
                          f"Classification {'confirmed' if decision == 'confirm' else 'changed'}: {final}",
-                         {"decision": decision, "category": final, "note": note})
+                         {"decision": decision, "category": final, "note": note,
+                          "handling_seconds": _seconds(handling_seconds), "human": True})
         return self.advance(case.id, BILLING_AGENT)
 
     # ------------------------------------------------------------------ step 4
@@ -240,7 +250,7 @@ class BillingAgent:
                 detail={"reasons": match.reasons, "candidates": len(match.candidate_ids)},
             )
             self._escalate(case, "Patient on the claim could not be matched safely to Meditab. " + "; ".join(match.reasons),
-                           kind=None, severity="critical")
+                           kind=None, severity="critical", step=4)
             return
         patient_id = match.patient.patient_id
         case.meditab_patient_id = patient_id
@@ -298,19 +308,19 @@ class BillingAgent:
         category = Category(case.confirmed_category)
         if category in HARD_STOPS:
             case.owner = ROUTING[category]
-            self._escalate(case, HARD_STOPS[category], kind="hard_stop_rule", severity="medium")
+            self._escalate(case, HARD_STOPS[category], kind="hard_stop_rule", severity="medium", step=6)
             return
         if any(g["reason"].startswith("Meditab was unavailable") for g in case.gaps):
             case.owner = ROUTING[category]
             self._escalate(case, "Required records could not be checked because Meditab was unavailable. Retry later.",
-                           kind="source_unavailable", severity="medium")
+                           kind="source_unavailable", severity="medium", step=5)
             return
         self._draft(case, item)
 
     def _draft(self, case: BillingCase, item: ClaimWorkItem) -> None:
         if case.draft_version >= self._settings.max_draft_attempts:
             self._escalate(case, f"Draft attempts reached the limit ({self._settings.max_draft_attempts}).",
-                           kind="draft_limit", severity="medium")
+                           kind="draft_limit", severity="medium", step=6)
             return
         category = Category(case.confirmed_category)
         if category == Category.NO_PAYER_RESPONSE:
@@ -335,7 +345,7 @@ class BillingAgent:
                 context={"draft_type": draft_type, "claim": claim, "evidence": evidence, "gaps": case.gaps},
             )
         except LLMError as exc:
-            self._escalate(case, f"Drafting failed: {exc}", kind="llm_failure", severity="medium")
+            self._escalate(case, f"Drafting failed: {exc}", kind="llm_failure", severity="medium", step=6)
             return
         self._log_llm(case, "draft", result)
 
@@ -344,7 +354,7 @@ class BillingAgent:
         errors, warnings = check_draft(text, cited, evidence_text, " ".join(str(v) for v in claim.values()))
         if errors:
             self._escalate(case, "Draft failed safety checks: " + "; ".join(errors), kind="draft_validation_failed",
-                           severity="high")
+                           severity="high", step=6)
             return
 
         version = case.draft_version + 1
@@ -362,7 +372,8 @@ class BillingAgent:
                          BILLING_AGENT, f"Drafted {draft_type.replace('_', ' ')} (version {version}); waiting for approval",
                          {"draft_type": draft_type, "version": version, "warnings": len(warnings)})
 
-    def review_draft(self, case_id: str, actor: Actor, *, decision: str, edited_text: str | None, note: str | None) -> BillingCase:
+    def review_draft(self, case_id: str, actor: Actor, *, decision: str, edited_text: str | None, note: str | None,
+                     handling_seconds: int | None = None, edit_level: str | None = None) -> BillingCase:
         case = self.get_case(case_id)
         self._require(case, {CaseState.AWAITING_DRAFT_APPROVAL})
         if decision == "reject":
@@ -371,7 +382,8 @@ class BillingAgent:
             case.review_note = note
             case.draft_reviewed_by = actor.username
             self._transition(case, {CaseState.AWAITING_DRAFT_APPROVAL}, CaseState.DRAFT_REJECTED, actor,
-                             "Draft rejected", {"note": note, "version": case.draft_version})
+                             "Draft rejected", {"note": note, "version": case.draft_version, "edit_level": "rejected",
+                                                "handling_seconds": _seconds(handling_seconds), "human": True})
             return case
         if decision != "approve":
             raise ValidationFailedError("decision must be 'approve' or 'reject'")
@@ -382,7 +394,9 @@ class BillingAgent:
         case.review_note = note
         self._transition(case, {CaseState.AWAITING_DRAFT_APPROVAL}, CaseState.APPROVED, actor,
                          f"Draft approved by {actor.username}" + (" (edited)" if case.draft_source == "human_edited" else ""),
-                         {"version": case.draft_version, "edited": case.draft_source == "human_edited"})
+                         {"version": case.draft_version, "edited": case.draft_source == "human_edited",
+                          "edit_level": _edit_level(edit_level, case.draft_source == "human_edited"),
+                          "handling_seconds": _seconds(handling_seconds), "human": True})
         self._route(case)
         return case
 
@@ -397,18 +411,27 @@ class BillingAgent:
                          {"owner": owner, "channel": "platform_task", "external_submission": False})
 
     # ------------------------------------------------------------------ step 8
-    def update_tracking(self, case_id: str, actor: Actor, *, status: str, reference: str | None, note: str | None) -> BillingCase:
+    def update_tracking(self, case_id: str, actor: Actor, *, status: str, reference: str | None, note: str | None,
+                        handling_seconds: int | None = None) -> BillingCase:
         case = self.get_case(case_id)
         if status == "submitted_by_staff":
             if not reference:
                 raise ValidationFailedError("Give a reference for what staff submitted (for example a portal confirmation number)")
             case.external_status, case.external_reference = status, reference
             self._transition(case, {CaseState.ROUTED}, CaseState.SUBMITTED_BY_STAFF, actor,
-                             f"Staff recorded submission outside the platform (ref {reference})", {"reference": reference})
+                             f"Staff recorded submission outside the platform (ref {reference})",
+                             {"reference": reference, "handling_seconds": _seconds(handling_seconds), "human": True})
         elif status == "resolved":
+            if case.state == CaseState.ESCALATED.value and not (note and note.strip()):
+                raise ValidationFailedError("Say how the escalated case was resolved")
             case.external_status = status
             self._transition(case, {CaseState.SUBMITTED_BY_STAFF, CaseState.ROUTED, CaseState.ESCALATED},
-                             CaseState.COMPLETED, actor, "Case resolved", {"note": note})
+                             CaseState.COMPLETED, actor, "Case resolved" + (f": {note}" if note else ""),
+                             {"note": note, "handling_seconds": _seconds(handling_seconds), "human": True})
+            closed = self._exceptions.resolve_for("billing_case", case.id, actor,
+                                                  f"Closed with case {case.claim_id}" + (f": {note}" if note else ""))
+            if closed:
+                self._event(case, 8, case.state, f"{closed} open exception(s) closed with the case", actor, {"closed": closed})
         else:
             raise ValidationFailedError("status must be 'submitted_by_staff' or 'resolved'")
         return case
@@ -445,7 +468,7 @@ class BillingAgent:
                 f"Case is {case.state}; this action needs {', '.join(sorted(s.value for s in allowed))}")
 
     def _transition(self, case: BillingCase, allowed: set[CaseState], to: CaseState, actor: Actor,
-                    summary: str, detail: dict | None = None) -> None:
+                    summary: str, detail: dict | None = None, *, step: int | None = None) -> None:
         self._require(case, allowed)
         previous = case.state
         case.state = to.value
@@ -455,7 +478,7 @@ class BillingAgent:
         except StaleDataError as exc:
             self._s.rollback()
             raise InvalidStateError("This case was changed by someone else. Reload and try again.") from exc
-        self._event(case, STATE_STEP[to] or STATE_STEP.get(CaseState(previous), 0), previous, summary, actor, detail)
+        self._event(case, step or EVENT_STEP.get(to) or STATE_STEP.get(CaseState(previous), 0), previous, summary, actor, detail)
         self._audit.record(actor=actor, action=f"billing.case.{to.value.lower()}", entity_type="billing_case",
                            entity_id=case.id, patient_ref=case.meditab_patient_id,
                            detail={"from": previous, "to": to.value, "claim_id": case.claim_id})
@@ -465,7 +488,8 @@ class BillingAgent:
                               actor=actor.username, summary=summary, detail=detail or {}))
         self._s.flush()
 
-    def _escalate(self, case: BillingCase, reason: str, *, kind: str | None, severity: str) -> None:
+    def _escalate(self, case: BillingCase, reason: str, *, kind: str | None, severity: str, step: int) -> None:
+        """Stop the case and hand it to a person. `step` is the workflow step where it stopped."""
         case.escalation_reason = reason
         if kind:
             self._exceptions.raise_(actor=BILLING_AGENT, kind=kind, severity=severity, entity_type="billing_case",
@@ -473,7 +497,7 @@ class BillingAgent:
                                     summary=f"Claim {case.claim_id}: {reason}", patient_ref=case.meditab_patient_id)
         movable = set(CaseState) - TERMINAL - {CaseState.ESCALATED}
         self._transition(case, movable, CaseState.ESCALATED, BILLING_AGENT, f"Escalated to a person: {reason}",
-                         {"kind": kind, "severity": severity})
+                         {"kind": kind, "severity": severity, "stopped_at_step": step}, step=step)
 
     def _once(self, key: str, case_id: str, action: str, result: dict) -> bool:
         """Record an action in the idempotency ledger. Returns False if it already happened.
@@ -495,23 +519,54 @@ class BillingAgent:
                                    "output_tokens": result.output_tokens})
 
 
+MAX_HANDLING_SECONDS = 4 * 3600  # ignore implausible timer values (tab left open overnight)
+
+
+def _seconds(value: int | None) -> int | None:
+    """Time a person actively spent on this decision, measured by the UI."""
+    if value is None:
+        return None
+    return max(0, min(int(value), MAX_HANDLING_SECONDS))
+
+
+def _edit_level(value: str | None, edited: bool) -> str | None:
+    """Reviewer's rating for the D1 'usable with minor or no revision' criterion."""
+    if value in ("none", "minor", "major"):
+        return value
+    return None if edited else "none"
+
+
 def proposed_category(case: BillingCase) -> str | None:
     """Hard rules win over the model."""
     return case.rule_category or case.model_category
 
 
 def step_progress(case: BillingCase, events: list[CaseEvent]) -> list[dict]:
+    """Status of each of the 8 steps, derived from what actually happened (the event log).
+
+    A step is "done" only if work was recorded against it. When a case was escalated, the step
+    where it stopped is "blocked" and later steps are "not_reached", even after a person closes it.
+    """
     state = CaseState(case.state)
-    done_steps = {e.step for e in events}
+    escalations = [e for e in events if e.to_state == CaseState.ESCALATED.value]
+    stopped_at = escalations[-1].step if escalations else None
+    done_steps = {e.step for e in events if e.to_state != CaseState.ESCALATED.value}
+    if stopped_at is not None:
+        # Work recorded against the stopping step before the escalation doesn't make it "done".
+        done_steps.discard(stopped_at)
     current = STATE_STEP[state]
     out = []
     for n, label in STEPS:
-        if state == CaseState.COMPLETED:
-            status = "done"
-        elif state == CaseState.NO_ACTION:
+        if state == CaseState.NO_ACTION:
             status = "done" if n <= 2 else "skipped"
-        elif state == CaseState.ESCALATED:
-            status = "done" if n in done_steps else "blocked"
+        elif n == stopped_at:
+            status = "blocked"
+        elif stopped_at is not None and n not in done_steps:
+            status = "not_reached"
+        elif state == CaseState.COMPLETED:
+            status = "done" if n in done_steps else "not_reached"
+        elif n in done_steps and n != current:
+            status = "done"
         elif n == current:
             status = "waiting_human" if state in HUMAN_GATES or state in {CaseState.ROUTED, CaseState.SUBMITTED_BY_STAFF} else "current"
         elif n < current:

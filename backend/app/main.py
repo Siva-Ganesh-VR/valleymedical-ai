@@ -7,7 +7,7 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
-from app.api import admin, billing, patients
+from app.api import admin, billing, features, patients
 from app.container import Container, build_container
 from app.errors import DomainError
 
@@ -35,5 +35,6 @@ def create_app(container: Container | None = None) -> FastAPI:
     app.include_router(admin.router)
     app.include_router(patients.router)
     app.include_router(billing.router)
+    app.include_router(features.router)
     return app
 

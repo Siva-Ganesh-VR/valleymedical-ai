@@ -1,16 +1,17 @@
 import { useCallback, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { api, type ChronicPainView, type ClinicalRecord, type RecordItem, type SummaryResult } from "../api";
+import DocAuditTab from "../components/DocAuditTab";
 import SourcePanel, { type SourceSelection } from "../components/SourcePanel";
 import Sparkline from "../components/Sparkline";
 import { ActionError, LoadState, Notice } from "../components/ui";
 import { useAction, useLoad } from "../hooks";
 import { SECTION_LABELS, sourcePath, when } from "../labels";
 
-const TABS = ["summary", "chronic", "medications", "allergies", "problems", "labs", "encounters", "documents"] as const;
+const TABS = ["summary", "chronic", "audit", "medications", "allergies", "problems", "labs", "encounters", "documents"] as const;
 type Tab = (typeof TABS)[number];
 const TAB_LABELS: Record<Tab, string> = {
-  summary: "Pre-visit summary", chronic: "Chronic pain", medications: "Medications", allergies: "Allergies",
+  summary: "Pre-visit summary", chronic: "Chronic pain", audit: "Documentation audit", medications: "Medications", allergies: "Allergies",
   problems: "Problems", labs: "Labs", encounters: "Encounters", documents: "Documents",
 };
 
@@ -54,14 +55,15 @@ export default function PatientPage() {
           {TABS.map((t) => (
             <button key={t} role="tab" aria-selected={tab === t} className={`tab${tab === t ? " active" : ""}`} onClick={() => setTab(t)}>
               {TAB_LABELS[t]}
-              {t !== "summary" && t !== "chronic" && <SectionCount record={record} section={t} />}
+              {t !== "summary" && t !== "chronic" && t !== "audit" && <SectionCount record={record} section={t} />}
             </button>
           ))}
         </div>
 
         {tab === "summary" && <SummaryTab patientId={patientId} onCite={setSelection} />}
         {tab === "chronic" && <ChronicTab patientId={patientId} onCite={setSelection} />}
-        {tab !== "summary" && tab !== "chronic" && <SectionTable record={record} section={tab} onCite={setSelection} />}
+        {tab === "audit" && <DocAuditTab patientId={patientId} onCite={setSelection} />}
+        {tab !== "summary" && tab !== "chronic" && tab !== "audit" && <SectionTable record={record} section={tab} onCite={setSelection} />}
       </section>
       <SourcePanel selection={selection} onClose={close} />
     </div>
@@ -98,13 +100,13 @@ function SectionTable({ record, section, onCite }: { record: ClinicalRecord; sec
 function SummaryTab({ patientId, onCite }: { patientId: string; onCite: (s: SourceSelection) => void }) {
   const [result, setResult] = useState<SummaryResult | null>(null);
   const action = useAction();
-  const generate = () => action.run(async () => setResult(await api.summary(patientId)));
+  const generate = (force = false) => action.run(async () => setResult(await api.summary(patientId, force)));
   const label = (n: number) => `${n}`;
 
   return (
     <div className="summary">
       <div className="summary-bar">
-        <button className="primary" disabled={action.busy} onClick={generate}>
+        <button className="primary" disabled={action.busy} onClick={() => generate()}>
           {action.busy ? "Writing summary…" : result ? "Write a new summary" : "Write pre-visit summary"}
         </button>
         <p className="fine">Every statement links to its Meditab source. Statements the system can't trace to a source are removed and listed below.</p>
@@ -112,6 +114,11 @@ function SummaryTab({ patientId, onCite }: { patientId: string; onCite: (s: Sour
       <ActionError message={action.error} />
       {result && (
         <>
+          {result.reused && (
+            <Notice tone="info" title="Nothing in the chart has changed, so the earlier summary was reused">
+              No AI call was needed. <button className="link" disabled={action.busy} onClick={() => generate(true)}>Write a fresh one anyway</button>
+            </Notice>
+          )}
           {result.message && <Notice tone={result.status === "failed" ? "human" : "info"} title={result.message} />}
           {result.data_gaps.length > 0 && (
             <Notice tone="human" title="Not included in this summary">

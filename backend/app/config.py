@@ -43,4 +43,14 @@ class Settings(BaseSettings):
     meditab_fixture: Path = FIXTURES_DIR / "meditab_mock.json"
     billing_fixture: Path = FIXTURES_DIR / "billing_mock.json"
 
+    # AI gateway (WBS N3/N10). Prices are per million tokens, from your provider's price page.
+    # Leave unset to show token counts only.
+    llm_price_input_per_mtok: float | None = None
+    llm_price_output_per_mtok: float | None = None
+    # Monthly token budget across all workflows. Calls are blocked (and go to the exception queue)
+    # once it is used up. 0 or None disables the budget.
+    llm_monthly_token_budget: int | None = 5_000_000
+
+    acceptance_testset: Path = FIXTURES_DIR / "acceptance_testset.json"
+
     cors_origins: list[str] = ["http://localhost:5173", "http://localhost:8080"]

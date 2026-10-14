@@ -68,7 +68,11 @@ export function money(n: number) {
   return n.toLocaleString("en-US", { style: "currency", currency: "USD" });
 }
 
+// Unambiguous year-month-day in every locale. toLocaleString() printed 8/10/2026 on an
+// Indian-locale machine, which a US reader takes as 10 August.
 export function when(iso: string) {
   const d = new Date(iso);
-  return Number.isNaN(d.getTime()) ? iso : d.toLocaleString();
+  if (Number.isNaN(d.getTime())) return iso;
+  const p = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`;
 }

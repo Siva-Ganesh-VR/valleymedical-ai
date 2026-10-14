@@ -7,13 +7,18 @@ clinician never depends on the model for those lists.
 """
 from __future__ import annotations
 
+import hashlib
+import json
+
 from pydantic import BaseModel
+from sqlalchemy import select
+from sqlalchemy.orm import Session
 
 from app.adapters.meditab.base import SourceRef
 from app.audit import AuditLogger
 from app.llm.client import LLMClient, LLMError
 from app.llm import prompts
-from app.models import utcnow_iso
+from app.models import SummaryCache, utcnow_iso
 from app.security import Actor
 from app.services.clinical_record import ClinicalRecord, ClinicalRecordService, RecordItem
 from app.services.exceptions import ExceptionService
@@ -55,6 +60,19 @@ class SummaryResult(BaseModel):
     prompt_version: str
     generated_at: str
     message: str | None = None
+    reused: bool = False  # True when returned from cache because the chart has not changed
+
+
+def fingerprint(record: ClinicalRecord, evidence_text: dict[str, str], llm_name: str) -> str:
+    """Changes whenever anything the summary depends on changes."""
+    basis = {
+        "evidence": evidence_text,
+        "statuses": [(s.section, s.status, s.item_count) for s in record.statuses],
+        "quarantined": [q.document_id for q in record.quarantined],
+        "prompt": prompts.PREVISIT_PROMPT_VERSION,
+        "llm": llm_name,
+    }
+    return hashlib.sha256(json.dumps(basis, sort_keys=True, default=str).encode()).hexdigest()
 
 
 def _evidence_text(item: RecordItem) -> str:
@@ -89,16 +107,31 @@ def data_gaps(record: ClinicalRecord) -> list[str]:
 
 
 class PreVisitSummaryService:
-    def __init__(self, records: ClinicalRecordService, llm: LLMClient, audit: AuditLogger, exceptions: ExceptionService):
+    def __init__(self, records: ClinicalRecordService, llm: LLMClient, audit: AuditLogger, exceptions: ExceptionService,
+                 session: Session | None = None):
         self._records = records
         self._llm = llm
         self._audit = audit
         self._exceptions = exceptions
+        self._session = session  # enables summary re-use; None disables caching
 
-    def generate(self, patient_id: str, actor: Actor) -> SummaryResult:
+    def generate(self, patient_id: str, actor: Actor, *, force: bool = False) -> SummaryResult:
         record = self._records.get_record(patient_id, actor=actor, purpose="pre_visit_summary")
         evidence = build_evidence(record)
         evidence_text = {eid: _evidence_text(item) for eid, item in evidence}
+        fp = fingerprint(record, evidence_text, self._llm.name)
+        session = self._session
+        if not force and session is not None and evidence:
+            cached = session.scalars(select(SummaryCache).where(
+                SummaryCache.patient_id == patient_id, SummaryCache.fingerprint == fp
+            ).order_by(SummaryCache.id.desc()).limit(1)).first()
+            if cached is not None:
+                if hasattr(self._llm, "record_reuse"):
+                    self._llm.record_reuse("previsit_summary", prompts.PREVISIT_PROMPT_VERSION, cached.tokens)
+                self._audit.record(actor=actor, action="llm.previsit_summary.reused", entity_type="patient",
+                                   entity_id=patient_id, patient_ref=patient_id, purpose="pre_visit_summary",
+                                   detail={"cache_id": cached.id, "created_at": cached.created_at})
+                return SummaryResult(**(cached.result | {"reused": True}))
         by_id = dict(evidence)
         extra_terms = {i.data["name"] for i in record.items.get("medications", [])} | {
             i.data["substance"] for i in record.items.get("allergies", [])
@@ -157,4 +190,10 @@ class PreVisitSummaryService:
             detail={"evidence_items": len(evidence), "accepted": len(accepted), "removed": len(removed),
                     "input_tokens": result.input_tokens, "output_tokens": result.output_tokens},
         )
-        return SummaryResult(status="ok", statements=accepted, removed=removed, model=result.model, **base)
+        out = SummaryResult(status="ok", statements=accepted, removed=removed, model=result.model, **base)
+        if session is not None:
+            session.add(SummaryCache(patient_id=patient_id, fingerprint=fp, created_at=out.generated_at,
+                                     result=out.model_dump(mode="json"),
+                                     tokens=(result.input_tokens or 0) + (result.output_tokens or 0)))
+            session.flush()
+        return out
