@@ -22,6 +22,7 @@ from app.errors import ValidationFailedError
 from app.models import BaselineMeasure, BillingCase, CaseEvent, ExceptionItem, utcnow_iso
 from app.security import Actor
 from app.services.billing_rules import Category
+from app.services.demo_workload import DEMO_PREFIX
 
 THRESHOLDS = {"classification": 0.90, "supporting_records": 0.95, "draft_usable": 0.90, "handling_reduction": 0.30}
 OPEN_STATES = {s.value for s in CaseState} - {CaseState.COMPLETED.value, CaseState.NO_ACTION.value}
@@ -99,7 +100,9 @@ class BillingInsightsService:
         worked = [c for c in cases if c.state != CaseState.NO_ACTION.value]
 
         # Classification: did the proposal (rules + model) match what the reviewer confirmed?
-        reviewed = [c for c in cases if c.confirmed_category]
+        # Decisions made by the demo loader are not evidence: leave them out of people-based measures.
+        reviewed = [c for c in cases if c.confirmed_category and not (c.classification_reviewed_by or "").startswith(DEMO_PREFIX)]
+        seeded = sum(1 for c in cases if (c.classification_reviewed_by or "").startswith(DEMO_PREFIX))
         agree = sum(1 for c in reviewed if proposed_category(c) == c.confirmed_category)
         model_agree = sum(1 for c in reviewed if c.model_category == c.confirmed_category)
 
@@ -112,7 +115,7 @@ class BillingInsightsService:
         ratings = Counter()
         for c in cases:
             for e in by_case[c.id]:
-                if e.to_state in (CaseState.APPROVED.value, CaseState.DRAFT_REJECTED.value):
+                if e.to_state in (CaseState.APPROVED.value, CaseState.DRAFT_REJECTED.value) and not e.actor.startswith(DEMO_PREFIX):
                     ratings[(e.detail or {}).get("edit_level") or "unrated"] += 1
         rated = sum(v for k, v in ratings.items() if k != "unrated")
         usable = ratings["none"] + ratings["minor"]
@@ -170,6 +173,7 @@ class BillingInsightsService:
                       "appeals_with_owner": amount(appeals), "appeal_cases": len(appeals),
                       "worked_to_completion": amount(completed), "completed_cases": len(completed)},
             "escalations": dict(escalations),
+            "demo_seeded_cases": seeded,
         }
 
     def export_csv(self) -> str:

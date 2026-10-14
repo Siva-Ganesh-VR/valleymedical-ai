@@ -43,6 +43,7 @@ class Permission(str, Enum):
     ACCEPTANCE_RUN = "acceptance:run"
     AI_USAGE_READ = "ai:usage_read"
     AI_CONTROL = "ai:control"
+    DEMO_WORKLOAD = "billing:demo_workload"
 
 
 _GRANTS: dict[Permission, frozenset[Role]] = {
@@ -64,6 +65,7 @@ _GRANTS: dict[Permission, frozenset[Role]] = {
     Permission.ACCEPTANCE_RUN: frozenset({Role.ADMIN}),
     Permission.AI_USAGE_READ: frozenset({Role.ADMIN, Role.BILLING_APPROVER}),
     Permission.AI_CONTROL: frozenset({Role.ADMIN}),
+    Permission.DEMO_WORKLOAD: frozenset({Role.BILLING_APPROVER, Role.ADMIN}),
 }
 
 

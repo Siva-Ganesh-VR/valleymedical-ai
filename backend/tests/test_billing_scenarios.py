@@ -72,3 +72,41 @@ def test_claim_scenario(worked, claim):
         assert f in d["flags"]
     if claim in PATIENT_STOPS:
         assert d["retrieved_records"] == [] and d["meditab_patient_id"] is None
+
+
+# ------------------------------------------------------------------ demo workload (status mix)
+def test_demo_workload_creates_realistic_status_mix(client):
+    from collections import Counter
+
+    from tests.conftest import ADMIN, APPROVER
+
+    r = client.post("/api/billing/queues/denials-team-a/demo-workload", headers=APPROVER).json()
+    assert r["problems"] == [] and len(r["moved"]) == 15
+    states = Counter(c["state"] for c in client.get("/api/billing/cases", headers=BILLER).json())
+    assert states == {"AWAITING_CLASSIFICATION_REVIEW": 12, "AWAITING_DRAFT_APPROVAL": 5, "NO_ACTION": 4, "COMPLETED": 3,
+                      "ROUTED": 2, "ESCALATED": 2, "SUBMITTED_BY_STAFF": 2, "DRAFT_REJECTED": 1}
+    again = client.post("/api/billing/queues/denials-team-a/demo-workload", headers=ADMIN).json()
+    assert again["moved"] == []
+
+
+def test_demo_script_cases_stay_at_review(client):
+    from tests.conftest import APPROVER
+
+    client.post("/api/billing/queues/denials-team-a/demo-workload", headers=APPROVER)
+    cases = {c["claim_id"]: c for c in client.get("/api/billing/cases", headers=BILLER).json()}
+    for claim in ("CLM-9001", "CLM-9003", "CLM-9004", "CLM-9005", "CLM-9006", "CLM-9008", "CLM-9026", "CLM-9090"):
+        assert cases[claim]["state"] == "AWAITING_CLASSIFICATION_REVIEW", claim
+
+
+def test_demo_decisions_are_not_counted_as_evidence(client):
+    from tests.conftest import APPROVER
+
+    client.post("/api/billing/queues/denials-team-a/demo-workload", headers=APPROVER)
+    m = client.get("/api/billing/insights", headers=BILLER).json()
+    assert m["classification"]["reviewed"] == 0 and m["drafts"]["rated"] == 0
+    assert m["demo_seeded_cases"] == 15
+    assert m["volume"]["completed"] == 3  # volume and money still reflect the queue
+
+
+def test_demo_workload_needs_permission(client):
+    assert client.post("/api/billing/queues/denials-team-a/demo-workload", headers=BILLER).status_code == 403

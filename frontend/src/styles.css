@@ -270,3 +270,13 @@ button.danger { background: var(--critical); border-color: var(--critical); colo
 .view-chip.active { background: var(--ink); border-color: var(--ink); color: #fff; }
 .view-chip.active .count { background: rgba(255, 255, 255, 0.2); }
 .toolbar input[type="search"] { min-width: 260px; }
+.status-bar { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 0.5rem; margin: 0.75rem 0; }
+.status-tile { display: flex; flex-direction: column; align-items: flex-start; gap: 0.1rem; text-align: left; padding: 0.55rem 0.75rem; border: 1px solid var(--rule); border-left-width: 4px; border-radius: var(--radius-m); background: var(--surface); }
+.status-tile:hover:not(:disabled) { border-color: var(--muted); }
+.status-tile.active { box-shadow: 0 0 0 2px var(--ink); }
+.status-count { font-family: var(--serif); font-size: 1.45rem; font-weight: 600; line-height: 1.1; font-variant-numeric: tabular-nums; }
+.status-name { font-size: 0.8rem; color: var(--muted); }
+.tone-neutral { border-left-color: #9fb3ba; }
+.tone-human { border-left-color: #c98a1b; }
+.tone-critical { border-left-color: var(--critical); }
+.tone-done { border-left-color: var(--done); }

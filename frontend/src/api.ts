@@ -335,6 +335,7 @@ export interface BillingInsights {
   };
   money: { at_risk_open: number; open_cases: number; appeals_with_owner: number; appeal_cases: number; worked_to_completion: number; completed_cases: number };
   escalations: Record<string, number>;
+  demo_seeded_cases: number;
   baselines: Baseline[];
 }
 
@@ -393,6 +394,8 @@ export const features = {
   addBaseline: (b: { category: string; minutes_per_case: number; sample_size: number; source: string }) =>
     request<{ category: string }>("POST", "/billing/baselines", b),
   demoBaselines: () => request<{ loaded: number }>("POST", "/billing/baselines/demo"),
+  demoWorkload: (queue: string) =>
+    request<{ moved: string[]; skipped: string[]; problems: string[] }>("POST", `/billing/queues/${enc(queue)}/demo-workload`),
   insightsCsv: () => requestText("/billing/insights.csv"),
 
   acceptanceRuns: () => request<AcceptanceRunView[]>("GET", "/acceptance/runs"),

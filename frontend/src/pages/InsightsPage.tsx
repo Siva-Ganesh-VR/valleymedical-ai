@@ -59,6 +59,11 @@ export default function InsightsPage() {
              n={m.handling_time.by_category.reduce((a, r) => a + r.cases, 0)} unit="timed cases"
              note={m.handling_time.baseline_captured ? "No timed cases yet" : "Needs a time-study baseline"} />
       </div>
+      {m.demo_seeded_cases > 0 && (
+        <Notice tone="info" title={`${m.demo_seeded_cases} cases were moved by the demo workload loader`}>
+          Their classification and draft decisions are left out of the accuracy and usability figures. Volume and money still include them.
+        </Notice>
+      )}
       {m.handling_time.baseline_synthetic && (
         <Notice tone="human" title="The handling-time baseline includes synthetic demo figures">Replace them with the real pre-agent time study before quoting any reduction.</Notice>
       )}
